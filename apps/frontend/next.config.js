@@ -3,4 +3,4 @@ const nextConfig = {
   transpilePackages: ['@rayz/ui', '@rayz/types'],
 };
 
-module.exports = nextConfig;
+export default nextConfig;

@@ -1,6 +1,6 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { FlatCompat } from '@eslint/eslintrc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,17 +10,15 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next", "prettier"),
+  ...compat.extends('next', 'prettier'),
   {
     rules: {
       '@next/next/no-html-link-for-pages': 'off',
     },
-    parserOptions: {
-      babelOptions: {
-        presets: [require.resolve('next/babel')],
-      },
-    },
-  }
+  },
+  {
+    ignores: ['.next/**', '.turbo/**', 'node_modules/**'],
+  },
 ];
 
 export default eslintConfig;

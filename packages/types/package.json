@@ -2,6 +2,7 @@
   "name": "@rayz/types",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
@@ -11,7 +12,7 @@
   "devDependencies": {
     "@rayz/eslint-config": "workspace:*",
     "@rayz/typescript-config": "workspace:*",
-    "eslint": "^9.0.0",
-    "typescript": "^5.2.0"
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.3"
   }
 }

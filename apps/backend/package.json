@@ -2,11 +2,12 @@
   "name": "backend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint",
+    "lint": "eslint .",
     "clean": "rm -rf .next .turbo node_modules",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -14,20 +15,20 @@
   },
   "dependencies": {
     "@rayz/types": "workspace:*",
-    "@prisma/client": "^5.0.0",
-    "next": "^15.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@prisma/client": "^6.18.0",
+    "next": "^16.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@rayz/eslint-config": "workspace:*",
     "@rayz/typescript-config": "workspace:*",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "eslint": "^9.0.0",
-    "prisma": "^5.0.0",
-    "typescript": "^5.2.0"
+    "@types/node": "^20.19.24",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.39.0",
+    "prisma": "^6.18.0",
+    "typescript": "^5.9.3"
   }
 }

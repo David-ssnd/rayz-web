@@ -2,11 +2,12 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
@@ -17,23 +18,24 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
-    "next": "^15.0.0",
+    "next": "^16.0.1",
     "next-themes": "^0.4.6",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@rayz/eslint-config": "workspace:*",
     "@rayz/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.16",
     "@types/node": "^20.19.24",
-    "@types/react": "^18.3.26",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "autoprefixer": "^10.4.21",
-    "eslint": "^9.0.0",
+    "eslint": "^9.39.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18",
+    "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
   }
 }

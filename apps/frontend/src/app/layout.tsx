@@ -22,38 +22,46 @@ export const metadata: Metadata = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers>
           <main className="flex min-h-screen flex-col items-center p-8">
             <div className="w-full max-w-6xl">
-              <div className="flex">
-                <img src="/rayz.svg" alt="RayZ" className="h-16 w-auto mr-4" />
+              <div className="flex items-center">
+                <img
+                  src="/rayz.svg"
+                  alt="RayZ"
+                  className="h-16 w-auto mr-4 object-contain inline-block"
+                  style={{ maxHeight: '4rem', width: 'auto' }}
+                />
 
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
-                      <Link href="/presentation" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          Presentation
-                        </NavigationMenuLink>
-                      </Link>
+                      <NavigationMenuLink
+                        asChild
+                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
+                      >
+                        <Link href="/presentation">Presentation</Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
-                      <Link href="/hardware" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          Hardware
-                        </NavigationMenuLink>
-                      </Link>
+                      <NavigationMenuLink
+                        asChild
+                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
+                      >
+                        <Link href="/hardware">Hardware</Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
-                      <Link href="/techstack" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          Tech Stack
-                        </NavigationMenuLink>
-                      </Link>
+                      <NavigationMenuLink
+                        asChild
+                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
+                      >
+                        <Link href="/techstack">Tech Stack</Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
