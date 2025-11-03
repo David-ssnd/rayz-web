@@ -13,11 +13,6 @@ export function PageLayout({ title, description, children }: PageLayoutProps) {
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         {description && <p className="text-muted-foreground text-sm mt-2">{description}</p>}
       </div>
-      {/* <Card>
-        <CardContent className="p-6">
-          {children}
-        </CardContent>
-      </Card> */}
       {children}
     </div>
   );
