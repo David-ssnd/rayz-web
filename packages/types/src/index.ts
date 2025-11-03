@@ -1,5 +1,3 @@
-// Shared TypeScript types across frontend and backend
-
 export interface User {
   id: string;
   email: string;
@@ -18,5 +16,3 @@ export interface Weapon {
   name: string;
   status: 'active' | 'inactive';
 }
-
-// Add more shared types here

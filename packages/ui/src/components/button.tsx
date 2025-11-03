@@ -23,16 +23,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'h-12 px-6 text-lg',
     };
 
-    return (
-      React.createElement(
-        'button',
-        {
-          ref: ref,
-          className: `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`,
-          ...props,
-        }
-      )
-    );
+    return React.createElement('button', {
+      ref: ref,
+      className: `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`,
+      ...props,
+    });
   }
 );
 

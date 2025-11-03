@@ -22,7 +22,7 @@ This Turborepo includes the following packages/apps:
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm 9.0.0+
 
 ### Installation

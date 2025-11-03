@@ -24,7 +24,7 @@ const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
   const designId = designIdMatch ? designIdMatch[1] : '';
 
   const paddingTop = `${(1 / aspectRatio) * 100}%`;
-  
+
   const embedUrl = `https://www.canva.com/design/${designId}/view?embed`;
   const linkUrl = `https://www.canva.com/design/${designId}/view?utm_content=${designId}&utm_campaign=designshare&utm_medium=embeds&utm_source=link`;
 
