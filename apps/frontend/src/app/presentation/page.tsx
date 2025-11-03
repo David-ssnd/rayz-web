@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { PageLayout } from '@/components/PageLayout';
+
 import CanvaEmbed from '@/components/CanvaEmbed';
+import { PageLayout } from '@/components/PageLayout';
 
 export const metadata: Metadata = {
   title: 'Presentation | RayZ',

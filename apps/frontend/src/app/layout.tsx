@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+
 import './globals.css';
+
 import Link from 'next/link';
+
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -8,8 +11,9 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
-import { Providers } from './providers';
 import { ThemeToggle } from '@/components/ThemeToggle';
+
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'RayZ Dashboard',
