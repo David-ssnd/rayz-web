@@ -28,7 +28,7 @@ const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
   const embedUrl = `https://www.canva.com/design/${designId}/view?embed`;
   const linkUrl = `https://www.canva.com/design/${designId}/view?utm_content=${designId}&utm_campaign=designshare&utm_medium=embeds&utm_source=link`;
 
-  return (
+  https: return (
     <div className={`canva-embed-container ${className}`}>
       {/* Responzívny iframe kontajner */}
       <div
