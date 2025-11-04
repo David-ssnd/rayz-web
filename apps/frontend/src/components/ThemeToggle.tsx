@@ -7,7 +7,18 @@ import { useTheme } from 'next-themes';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export function ThemeToggle() {
+  const [mounted, setMounted] = React.useState(false);
   const { theme, setTheme } = useTheme();
+
+  // Only render after mounting to avoid hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Return a placeholder with the same dimensions during SSR
+    return <div className="bg-background border rounded-full p-0.5 h-8 w-[88px]" />;
+  }
 
   return (
     <ToggleGroup
