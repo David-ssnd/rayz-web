@@ -22,25 +22,25 @@ export function ThemeToggle() {
         value="system"
         aria-label="System theme"
         size="sm"
-        className="rounded-full h-7 w-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        <Monitor className="h-3.5 w-3.5" />
+        <Monitor className="h-3 w-3" />
       </ToggleGroupItem>
       <ToggleGroupItem
         value="light"
         aria-label="Light theme"
         size="sm"
-        className="rounded-full h-7 w-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        <Sun className="h-3.5 w-3.5" />
+        <Sun className="h-3 w-3" />
       </ToggleGroupItem>
       <ToggleGroupItem
         value="dark"
         aria-label="Dark theme"
         size="sm"
-        className="rounded-full h-7 w-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        <Moon className="h-3.5 w-3.5" />
+        <Moon className="h-3 w-3" />
       </ToggleGroupItem>
     </ToggleGroup>
   );
