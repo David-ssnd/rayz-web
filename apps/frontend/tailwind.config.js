@@ -1,4 +1,4 @@
-import animate from 'tailwindcss-animate';
+import animate from 'tailwindcss-animate'
 
 /** @type {import('tailwindcss').Config} */
 const config = {
@@ -93,6 +93,6 @@ const config = {
     },
   },
   plugins: [animate],
-};
+}
 
-export default config;
+export default config

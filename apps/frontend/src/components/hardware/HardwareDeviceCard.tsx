@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react'
 
-import type { HardwareDevice } from '@/types/hardware';
-import { downloadImage } from '@/lib/downloadUtils';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { HardwareDevice } from '@/types/hardware'
+import { downloadImage } from '@/lib/downloadUtils'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -13,23 +13,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog'
 
-import { DeviceBadge } from './DeviceBadge';
-import { useZoom } from './useZoom';
-import { ZoomControls } from './ZoomControls';
+import { DeviceBadge } from './DeviceBadge'
+import { useZoom } from './useZoom'
+import { ZoomControls } from './ZoomControls'
 
 export const HardwareDeviceCard = memo(
   ({ name, microcontroller, description, real_img_url, scheme_img_url, badge }: HardwareDevice) => {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const { zoom, setZoomValue, resetZoom } = useZoom();
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const { zoom, setZoomValue, resetZoom } = useZoom()
 
     // Download handler
     const handleDownload = useCallback(() => {
-      if (!scheme_img_url) return;
-      const filename = `${name.replace(/\s+/g, '_')}_scheme.png`;
-      downloadImage(scheme_img_url, filename);
-    }, [scheme_img_url, name]);
+      if (!scheme_img_url) return
+      const filename = `${name.replace(/\s+/g, '_')}_scheme.png`
+      downloadImage(scheme_img_url, filename)
+    }, [scheme_img_url, name])
 
     return (
       <Card>
@@ -97,6 +97,6 @@ export const HardwareDeviceCard = memo(
           </Dialog>
         </CardContent>
       </Card>
-    );
+    )
   }
-);
+)

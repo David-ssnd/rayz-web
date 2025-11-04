@@ -1,7 +1,7 @@
 interface PageLayoutProps {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
+  title: string
+  description?: string
+  children: React.ReactNode
 }
 
 export function PageLayout({ title, description, children }: PageLayoutProps) {
@@ -13,5 +13,5 @@ export function PageLayout({ title, description, children }: PageLayoutProps) {
       </div>
       {children}
     </div>
-  );
+  )
 }

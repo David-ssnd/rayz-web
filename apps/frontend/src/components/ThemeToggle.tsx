@@ -1,23 +1,23 @@
-'use client';
+'use client'
 
-import * as React from 'react';
-import { Monitor, MoonStar, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import * as React from 'react'
+import { Monitor, MoonStar, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export function ThemeToggle() {
-  const [mounted, setMounted] = React.useState(false);
-  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false)
+  const { theme, setTheme } = useTheme()
 
   // Only render after mounting to avoid hydration mismatch
   React.useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   if (!mounted) {
     // Return a placeholder with the same dimensions during SSR
-    return <div className="bg-background border rounded-full p-0.5 h-8 w-[88px]" />;
+    return <div className="bg-background border rounded-full p-0.5 h-8 w-[88px]" />
   }
 
   return (
@@ -25,7 +25,7 @@ export function ThemeToggle() {
       type="single"
       value={theme}
       onValueChange={(value) => {
-        if (value) setTheme(value);
+        if (value) setTheme(value)
       }}
       className="bg-background border rounded-full p-0.5"
     >
@@ -54,5 +54,5 @@ export function ThemeToggle() {
         <MoonStar className="h-3 w-3" />
       </ToggleGroupItem>
     </ToggleGroup>
-  );
+  )
 }

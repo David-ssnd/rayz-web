@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import React from 'react';
+import React from 'react'
 
 interface CanvaEmbedProps {
-  url: string; // Full Canva URL (e.g., https://www.canva.com/design/DAG1wt58las/r-xa2ln8hKv0UzK1o0MNsA/view)
-  userName?: string;
-  designTitle?: string;
-  aspectRatio?: number;
-  className?: string;
-  showLink?: boolean;
+  url: string // Full Canva URL (e.g., https://www.canva.com/design/DAG1wt58las/r-xa2ln8hKv0UzK1o0MNsA/view)
+  userName?: string
+  designTitle?: string
+  aspectRatio?: number
+  className?: string
+  showLink?: boolean
 }
 
 const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
@@ -20,13 +20,13 @@ const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
   showLink = true,
 }) => {
   // Extract design ID from the URL
-  const designIdMatch = url.match(/\/design\/([^\/]+)/);
-  const designId = designIdMatch ? designIdMatch[1] : '';
+  const designIdMatch = url.match(/\/design\/([^\/]+)/)
+  const designId = designIdMatch ? designIdMatch[1] : ''
 
-  const paddingTop = `${(1 / aspectRatio) * 100}%`;
+  const paddingTop = `${(1 / aspectRatio) * 100}%`
 
-  const embedUrl = `https://www.canva.com/design/${designId}/view?embed`;
-  const linkUrl = `https://www.canva.com/design/${designId}/view?utm_content=${designId}&utm_campaign=designshare&utm_medium=embeds&utm_source=link`;
+  const embedUrl = `https://www.canva.com/design/${designId}/view?embed`
+  const linkUrl = `https://www.canva.com/design/${designId}/view?utm_content=${designId}&utm_campaign=designshare&utm_medium=embeds&utm_source=link`
 
   https: return (
     <div className={`canva-embed-container ${className}`}>
@@ -87,7 +87,7 @@ const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default CanvaEmbed;
+export default CanvaEmbed

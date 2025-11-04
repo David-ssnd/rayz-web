@@ -1,12 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'
 
-import CanvaEmbed from '@/components/CanvaEmbed';
-import { PageLayout } from '@/components/PageLayout';
+import CanvaEmbed from '@/components/CanvaEmbed'
+import { PageLayout } from '@/components/PageLayout'
 
 export const metadata: Metadata = {
   title: 'Presentation | RayZ',
   description: 'Project presentation and overview slides',
-};
+}
 
 export default function PresentationPage() {
   return (
@@ -23,5 +23,5 @@ export default function PresentationPage() {
         />
       </div>
     </PageLayout>
-  );
+  )
 }

@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'
 
-import './globals.css';
+import './globals.css'
 
-import { Navigation } from '@/components/Navigation';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { Navigation } from '@/components/Navigation'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'RayZ Dashboard',
   description: 'Hardware and software monitoring dashboard for RayZ project',
-};
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,5 +29,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

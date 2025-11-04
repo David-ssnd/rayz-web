@@ -1,19 +1,19 @@
-import { memo } from 'react';
-import { Download, RotateCcw } from 'lucide-react';
+import { memo } from 'react'
+import { Download, RotateCcw } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
 
 // Constants for zoom limits
-export const MIN_ZOOM = 0.5;
-export const MAX_ZOOM = 10;
-export const ZOOM_STEP = 0.01;
+export const MIN_ZOOM = 0.5
+export const MAX_ZOOM = 10
+export const ZOOM_STEP = 0.01
 
 interface ZoomControlsProps {
-  zoom: number;
-  onZoomChange: (value: number) => void;
-  onResetZoom: () => void;
-  onDownload: () => void;
+  zoom: number
+  onZoomChange: (value: number) => void
+  onResetZoom: () => void
+  onDownload: () => void
 }
 
 export const ZoomControls = memo(
@@ -39,6 +39,6 @@ export const ZoomControls = memo(
           Download
         </Button>
       </div>
-    );
+    )
   }
-);
+)

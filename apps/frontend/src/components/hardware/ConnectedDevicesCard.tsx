@@ -1,8 +1,8 @@
-import { Car } from 'lucide-react';
+import { Car } from 'lucide-react'
 
-import type { HardwareDevice } from '@/types/hardware';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { HardwareDevice } from '@/types/hardware'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function ConnectedDevicesCard({
   name,
@@ -35,5 +35,5 @@ export function ConnectedDevicesCard({
         <CardDescription className="mt-4 text-sm">{description}</CardDescription>
       </CardContent>
     </Card>
-  );
+  )
 }

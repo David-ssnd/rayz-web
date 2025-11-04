@@ -10,5 +10,5 @@ export default function Home() {
         <li>/api/weapons - Weapon management</li>
       </ul>
     </main>
-  );
+  )
 }

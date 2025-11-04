@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'
 
-import type { HardwareDevice } from '@/types/hardware';
-import { ConnectedDevicesCard } from '@/components/hardware/ConnectedDevicesCard';
-import { HardwareDeviceCard } from '@/components/hardware/HardwareDeviceCard';
-import { PageLayout } from '@/components/PageLayout';
+import type { HardwareDevice } from '@/types/hardware'
+import { ConnectedDevicesCard } from '@/components/hardware/ConnectedDevicesCard'
+import { HardwareDeviceCard } from '@/components/hardware/HardwareDeviceCard'
+import { PageLayout } from '@/components/PageLayout'
 
 export const metadata: Metadata = {
   title: 'Hardware | RayZ',
   description: 'Real-time hardware monitoring and control dashboard',
-};
+}
 
 const mockDevices: HardwareDevice[] = [
   {
@@ -27,14 +27,14 @@ const mockDevices: HardwareDevice[] = [
     description: 'A device used as a weapon for testing purposes.',
     badge: 'Weapon',
   },
-];
+]
 
 const connectedDevice: HardwareDevice = {
   name: 'Connected devices',
   microcontroller: 'Multiple Microcontrollers',
   real_img_url: '/hardware/weapon-target.jpeg',
   description: 'Devices connected and communicating in real-time.',
-};
+}
 
 export default function HardwarePage() {
   return (
@@ -49,5 +49,5 @@ export default function HardwarePage() {
       </div>
       <ConnectedDevicesCard {...connectedDevice} />
     </PageLayout>
-  );
+  )
 }

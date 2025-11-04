@@ -1,3 +1,3 @@
-import config from '@rayz/eslint-config';
+import config from '@rayz/eslint-config'
 
-export default config;
+export default config

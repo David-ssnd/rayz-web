@@ -1,21 +1,21 @@
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'
 
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageLayout } from '@/components/PageLayout';
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLayout } from '@/components/PageLayout'
 
 export const metadata: Metadata = {
   title: 'Tech Stack | RayZ',
   description: 'Technology stack and architecture overview',
-};
-
-interface TechItem {
-  name: string;
-  description: string;
-  badges: BadgeVariant[];
 }
 
-type BadgeVariant = 'frontend' | 'backend' | 'hardware' | 'development' | 'database';
+interface TechItem {
+  name: string
+  description: string
+  badges: BadgeVariant[]
+}
+
+type BadgeVariant = 'frontend' | 'backend' | 'hardware' | 'development' | 'database'
 
 const techStack: TechItem[] = [
   {
@@ -58,7 +58,7 @@ const techStack: TechItem[] = [
     description: 'Relational database',
     badges: ['database'],
   },
-];
+]
 
 export default function TechStackPage() {
   return (
@@ -86,5 +86,5 @@ export default function TechStackPage() {
         ))}
       </div>
     </PageLayout>
-  );
+  )
 }

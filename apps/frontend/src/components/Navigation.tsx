@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
+import Link from 'next/link'
 
 import {
   NavigationMenu,
@@ -8,8 +8,8 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
-import { ThemeToggle } from '@/components/ThemeToggle';
+} from '@/components/ui/navigation-menu'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function Navigation() {
   return (
@@ -47,5 +47,5 @@ export function Navigation() {
 
       <ThemeToggle />
     </div>
-  );
+  )
 }
