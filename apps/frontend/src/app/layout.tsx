@@ -2,17 +2,8 @@ import type { Metadata } from 'next';
 
 import './globals.css';
 
-import Link from 'next/link';
-
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
+import { Navigation } from '@/components/Navigation';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'RayZ Dashboard',
@@ -39,31 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   style={{ maxHeight: '4rem', width: 'auto' }}
                 />
 
-                <NavigationMenu>
-                  <NavigationMenuList>
-                    <NavigationMenuItem>
-                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="/presentation">Presentation</Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-
-                    <NavigationMenuItem>
-                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="/hardware">Hardware</Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-
-                    <NavigationMenuItem>
-                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link href="/techstack">Tech Stack</Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-
-                    <NavigationMenuItem>
-                      <ThemeToggle />
-                    </NavigationMenuItem>
-                  </NavigationMenuList>
-                </NavigationMenu>
+                <Navigation />
               </div>
 
               <div className="mt-8">{children}</div>
