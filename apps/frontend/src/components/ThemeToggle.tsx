@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Monitor, MoonStar, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -40,7 +40,7 @@ export function ThemeToggle() {
         size="sm"
         className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        <Moon className="h-3 w-3" />
+        <MoonStar className="h-3 w-3" />
       </ToggleGroupItem>
     </ToggleGroup>
   );
