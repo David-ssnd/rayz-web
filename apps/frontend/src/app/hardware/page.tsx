@@ -11,21 +11,27 @@ export const metadata: Metadata = {
 };
 
 interface HardwareDevice {
-  id: string;
   name: string;
-  type: string;
+  microcontroller: string;
+  description: string;
+  ai_img_url?: string;
+  real_img_url?: string;
 }
 
 const mockDevices: HardwareDevice[] = [
   {
-    id: '1',
     name: 'Target Device',
-    type: 'ESP32',
+    microcontroller: 'ESP32-C3 Supermini',
+    ai_img_url: '',
+    real_img_url: '',
+    description: 'A device used as a target for testing purposes.',
   },
   {
-    id: '2',
     name: 'Weapon Device',
-    type: 'ESP32',
+    microcontroller: 'ESP32-WROOM',
+    ai_img_url: '',
+    real_img_url: '',
+    description: 'A device used as a weapon for testing purposes.',
   },
 ];
 
@@ -35,15 +41,17 @@ export default function HardwarePage() {
       title="Hardware Monitoring"
       description="Monitor and control connected hardware devices"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col gap-6">
         {mockDevices.map((device) => (
-          <Card key={device.id}>
+          <Card key={device.name}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{device.name}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Type: {device.type}</p>
+                <p className="text-sm text-muted-foreground">
+                  Microcontroller: {device.microcontroller}
+                </p>
               </div>
             </CardContent>
           </Card>

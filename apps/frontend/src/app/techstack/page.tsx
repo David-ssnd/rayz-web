@@ -76,7 +76,7 @@ export default function TechStackPage() {
               <CardDescription>{item.description}</CardDescription>
               <div className="flex flex-wrap gap-1 mt-2">
                 {item.badges.map((badge) => (
-                  <Badge key={badge} variant={badge}>
+                  <Badge key={`${item.name}-${badge}`} variant={badge}>
                     {badge.charAt(0).toUpperCase() + badge.slice(1)}
                   </Badge>
                 ))}

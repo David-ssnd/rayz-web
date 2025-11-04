@@ -11,9 +11,8 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
-
-import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'RayZ Dashboard',
@@ -23,8 +22,13 @@ export const metadata: Metadata = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <Providers>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           <main className="flex min-h-screen flex-col items-center p-8">
             <div className="w-full max-w-6xl">
               <div className="flex items-center">
@@ -38,28 +42,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
-                      <NavigationMenuLink
-                        asChild
-                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
-                      >
+                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                         <Link href="/presentation">Presentation</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
-                      <NavigationMenuLink
-                        asChild
-                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
-                      >
+                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                         <Link href="/hardware">Hardware</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
-                      <NavigationMenuLink
-                        asChild
-                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 hover:scale-105`}
-                      >
+                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                         <Link href="/techstack">Tech Stack</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
@@ -74,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="mt-8">{children}</div>
             </div>
           </main>
-        </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
