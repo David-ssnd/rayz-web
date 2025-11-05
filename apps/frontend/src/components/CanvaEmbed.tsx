@@ -25,10 +25,10 @@ const CanvaEmbed: React.FC<CanvaEmbedProps> = ({
 
   const paddingTop = `${(1 / aspectRatio) * 100}%`
 
-  const embedUrl = `https://www.canva.com/design/${designId}/view?embed`
+  const embedUrl = url.includes('?embed') ? url : `${url}?embed`
   const linkUrl = `https://www.canva.com/design/${designId}/view?utm_content=${designId}&utm_campaign=designshare&utm_medium=embeds&utm_source=link`
 
-  https: return (
+  return (
     <div className={`canva-embed-container ${className}`}>
       {/* Responzívny iframe kontajner */}
       <div

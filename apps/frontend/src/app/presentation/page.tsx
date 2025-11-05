@@ -16,7 +16,7 @@ export default function PresentationPage() {
     >
       <div className="space-y-6">
         <CanvaEmbed
-          url="https://www.canva.com/design/DAG1wt58las/r-xa2ln8hKv0UzK1o0MNsA/view"
+          url="https://www.canva.com/design/DAG1wt58las/r-xa2ln8hKv0UzK1o0MNsA/view?embed"
           userName="Dávid Krivoklatský"
           designTitle="RayZ"
           aspectRatio={16 / 9}
