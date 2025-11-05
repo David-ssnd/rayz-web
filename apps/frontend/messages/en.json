@@ -1,0 +1,85 @@
+{
+  "Navigation": {
+    "presentation": "Presentation",
+    "hardware": "Hardware",
+    "techStack": "Tech Stack"
+  },
+  "Presentation": {
+    "title": "Project Presentation",
+    "description": "Interactive presentation slides showcasing the RayZ project",
+    "metaTitle": "Presentation | RayZ",
+    "metaDescription": "Project presentation and overview slides"
+  },
+  "Hardware": {
+    "title": "Hardware Monitoring",
+    "description": "Monitor and control connected hardware devices",
+    "metaTitle": "Hardware | RayZ",
+    "metaDescription": "Real-time hardware monitoring and control dashboard",
+    "targetDevice": {
+      "name": "Target Device",
+      "description": "A device used as a target for testing purposes.",
+      "badge": "Target"
+    },
+    "weaponDevice": {
+      "name": "Weapon Device",
+      "description": "A device used as a weapon for testing purposes.",
+      "badge": "Weapon"
+    },
+    "connectedDevices": {
+      "name": "Connected devices",
+      "microcontroller": "Multiple Microcontrollers",
+      "description": "Devices connected and communicating in real-time."
+    }
+  },
+  "TechStack": {
+    "title": "Technology Stack",
+    "description": "Tools and technologies powering the RayZ project",
+    "metaTitle": "Tech Stack | RayZ",
+    "metaDescription": "Technology stack and architecture overview",
+    "items": {
+      "nextjs": {
+        "name": "Next.js",
+        "description": "React framework for web applications"
+      },
+      "typescript": {
+        "name": "TypeScript",
+        "description": "Type-safe JavaScript"
+      },
+      "tailwind": {
+        "name": "Tailwind CSS",
+        "description": "Utility-first CSS framework"
+      },
+      "shadcn": {
+        "name": "shadcn/ui",
+        "description": "Modern UI component library"
+      },
+      "esp32": {
+        "name": "ESP32",
+        "description": "Microcontroller for IoT devices"
+      },
+      "platformio": {
+        "name": "PlatformIO",
+        "description": "IDE for embedded development"
+      },
+      "prisma": {
+        "name": "Prisma",
+        "description": "Next-generation ORM"
+      },
+      "postgresql": {
+        "name": "PostgreSQL",
+        "description": "Relational database"
+      }
+    },
+    "badges": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "hardware": "Hardware",
+      "development": "Development",
+      "database": "Database"
+    }
+  },
+  "Common": {
+    "dashboardTitle": "RayZ Dashboard",
+    "dashboardDescription": "Hardware and software monitoring dashboard for RayZ project"
+  }
+}

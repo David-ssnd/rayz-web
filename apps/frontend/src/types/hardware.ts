@@ -5,4 +5,5 @@ export interface HardwareDevice {
   scheme_img_url?: string
   real_img_url?: string
   badge?: string
+  badgeVariant?: 'Target' | 'BowArrow' | 'Connected'
 }

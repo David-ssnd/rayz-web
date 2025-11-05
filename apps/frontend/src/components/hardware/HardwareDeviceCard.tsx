@@ -20,7 +20,15 @@ import { useZoom } from './useZoom'
 import { ZoomControls } from './ZoomControls'
 
 export const HardwareDeviceCard = memo(
-  ({ name, microcontroller, description, real_img_url, scheme_img_url, badge }: HardwareDevice) => {
+  ({
+    name,
+    microcontroller,
+    description,
+    real_img_url,
+    scheme_img_url,
+    badge,
+    badgeVariant,
+  }: HardwareDevice) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const { zoom, setZoomValue, resetZoom } = useZoom()
 
@@ -35,7 +43,7 @@ export const HardwareDeviceCard = memo(
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-large">{name}</CardTitle>
-          <DeviceBadge badge={badge} />
+          <DeviceBadge badge={badge} badgeVariant={badgeVariant} />
         </CardHeader>
         <CardContent>
           {/* Real image display */}

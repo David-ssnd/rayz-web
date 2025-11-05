@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
 
 import {
   NavigationMenu,
@@ -9,9 +10,12 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function Navigation() {
+  const t = useTranslations('Navigation')
+
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center">
@@ -26,26 +30,29 @@ export function Navigation() {
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                <Link href="/presentation">Presentation</Link>
+                <Link href="/presentation">{t('presentation')}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                <Link href="/hardware">Hardware</Link>
+                <Link href="/hardware">{t('hardware')}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                <Link href="/techstack">Tech Stack</Link>
+                <Link href="/techstack">{t('techStack')}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
       </div>
 
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        <ThemeToggle />
+      </div>
     </div>
   )
 }
