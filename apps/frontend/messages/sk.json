@@ -2,7 +2,9 @@
   "Navigation": {
     "presentation": "Prezentácia",
     "hardware": "Hardvér",
-    "techStack": "Technológie"
+    "techStack": "Technológie",
+    "github": "Github",
+    "documentation": "Dokumentácia"
   },
   "Presentation": {
     "title": "Prezentácia projektu",

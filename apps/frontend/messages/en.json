@@ -2,7 +2,9 @@
   "Navigation": {
     "presentation": "Presentation",
     "hardware": "Hardware",
-    "techStack": "Tech Stack"
+    "techStack": "Tech Stack",
+    "github": "Github",
+    "documentation": "Documentation"
   },
   "Presentation": {
     "title": "Project Presentation",

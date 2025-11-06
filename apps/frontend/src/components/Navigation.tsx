@@ -1,6 +1,7 @@
 'use client'
 
 import { Link } from '@/i18n/routing'
+import { ExternalLink } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import {
@@ -33,16 +34,42 @@ export function Navigation() {
                 <Link href="/presentation">{t('presentation')}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
-
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                 <Link href="/hardware">{t('hardware')}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
-
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                 <Link href="/techstack">{t('techStack')}</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <a
+                  href="https://github.com/David-ssnd/RayZ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="flex items-center gap-1">
+                    {t('github')}
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </a>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <a
+                  href="https://docs.google.com/document/d/1u_znfRPnOI1DHgK9Md7V5L7YhYJi6iWcMULM_RJ-6mI/edit?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="flex items-center gap-1">
+                    {t('documentation')}
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </a>
               </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
