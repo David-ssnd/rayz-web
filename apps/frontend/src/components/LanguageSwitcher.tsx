@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useTransition } from 'react'
 import { useParams } from 'next/navigation'
 import { usePathname, useRouter } from '@/i18n/routing'
+import ReactCountryFlag from 'react-country-flag'
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
@@ -50,7 +51,7 @@ export function LanguageSwitcher() {
         size="sm"
         className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        EN
+        <ReactCountryFlag countryCode="GB" svg />
       </ToggleGroupItem>
       <ToggleGroupItem
         value="sk"
@@ -58,7 +59,7 @@ export function LanguageSwitcher() {
         size="sm"
         className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
-        SK
+        <ReactCountryFlag countryCode="SK" svg />
       </ToggleGroupItem>
     </ToggleGroup>
   )
