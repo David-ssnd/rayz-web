@@ -21,7 +21,7 @@ export function Navigation() {
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center">
         <img
-          src="/rayz.svg"
+          src="/rayz-trim.svg"
           alt="RayZ"
           className="h-16 w-auto mr-4 object-contain inline-block"
           style={{ maxHeight: '4rem', width: 'auto' }}

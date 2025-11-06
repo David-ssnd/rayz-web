@@ -22,6 +22,11 @@ export async function generateMetadata({
   return {
     title: t('dashboardTitle'),
     description: t('dashboardDescription'),
+    icons: {
+      icon: '/r.png',
+      shortcut: '/r.png',
+      apple: '/r.png',
+    },
   }
 }
 
