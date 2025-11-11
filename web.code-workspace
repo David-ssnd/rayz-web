@@ -1,0 +1,53 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "Web Root"
+    },
+    {
+      "path": "apps/frontend",
+      "name": "Frontend"
+    },
+    {
+      "path": "apps/backend",
+      "name": "Backend"
+    },
+    {
+      "path": "packages/types",
+      "name": "Types"
+    },
+    {
+      "path": "packages/ui",
+      "name": "UI Components"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "eslint.workingDirectories": [
+      "./apps/frontend",
+      "./apps/backend",
+      "./packages/types",
+      "./packages/ui"
+    ],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/.turbo": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "prisma.prisma",
+      "ms-vscode.vscode-typescript-next"
+    ]
+  }
+}
