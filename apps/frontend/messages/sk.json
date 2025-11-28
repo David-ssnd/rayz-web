@@ -38,7 +38,13 @@
     "description": "Hlavné technológie, ktoré stoja za projektom RayZ.",
     "metaTitle": "Technológie | RayZ",
     "metaDescription": "Prehľad technológií, ktoré tvoria základ projektu RayZ.",
+    "currentStack": "Aktuálne technológie",
+    "futureStack": "Plánované technológie",
     "items": {
+      "github": {
+        "name": "GitHub",
+        "description": "Platforma pre verzionovanie a spoluprácu na kóde."
+      },
       "nextjs": {
         "name": "Next.js",
         "description": "Moderný React framework pre rýchle webové aplikácie."
@@ -63,6 +69,10 @@
         "name": "PlatformIO",
         "description": "Vývojové prostredie pre programovanie embedded systémov."
       },
+      "freertos": {
+        "name": "FreeRTOS",
+        "description": "Real-time operačný systém pre mikrokontroléry."
+      },
       "prisma": {
         "name": "Prisma",
         "description": "Moderný ORM nástroj na prácu s databázami."
@@ -70,6 +80,22 @@
       "postgresql": {
         "name": "PostgreSQL",
         "description": "Spoľahlivá relačná databáza s otvoreným zdrojovým kódom."
+      },
+      "jest": {
+        "name": "Jest",
+        "description": "Framework na testovanie JavaScriptu."
+      },
+      "oauth": {
+        "name": "OAuth a prihlásenie",
+        "description": "Autentifikácia a autorizácia používateľov."
+      },
+      "cicd": {
+        "name": "CI/CD",
+        "description": "Kontinuálna integrácia a nasadenie."
+      },
+      "clangformat": {
+        "name": "clang-format",
+        "description": "Nástroj na formátovanie C/C++ kódu."
       }
     },
     "badges": {

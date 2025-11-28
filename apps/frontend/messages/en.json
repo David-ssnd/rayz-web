@@ -38,7 +38,13 @@
     "description": "Tools and technologies powering the RayZ project",
     "metaTitle": "Tech Stack | RayZ",
     "metaDescription": "Technology stack and architecture overview",
+    "currentStack": "Current Stack",
+    "futureStack": "Future Stack",
     "items": {
+      "github": {
+        "name": "GitHub",
+        "description": "Platform for version control and collaboration"
+      },
       "nextjs": {
         "name": "Next.js",
         "description": "React framework for web applications"
@@ -63,6 +69,10 @@
         "name": "PlatformIO",
         "description": "IDE for embedded development"
       },
+      "freertos": {
+        "name": "FreeRTOS",
+        "description": "Real-time operating system for microcontrollers"
+      },
       "prisma": {
         "name": "Prisma",
         "description": "Next-generation ORM"
@@ -70,6 +80,22 @@
       "postgresql": {
         "name": "PostgreSQL",
         "description": "Relational database"
+      },
+      "jest": {
+        "name": "Jest",
+        "description": "JavaScript testing framework"
+      },
+      "oauth": {
+        "name": "OAuth & Login",
+        "description": "Authentication and authorization"
+      },
+      "cicd": {
+        "name": "CI/CD",
+        "description": "Continuous integration and deployment"
+      },
+      "clangformat": {
+        "name": "clang-format",
+        "description": "Code formatter for C/C++"
       }
     },
     "badges": {

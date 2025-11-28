@@ -23,41 +23,83 @@ type BadgeVariant = 'frontend' | 'backend' | 'hardware' | 'development' | 'datab
 
 interface TechItem {
   key: string
+  link: string
   badges: BadgeVariant[]
 }
 
 const techStack: TechItem[] = [
   {
+    key: 'github',
+    link: 'https://github.com',
+    badges: ['frontend', 'backend', 'development'],
+  },
+  {
     key: 'nextjs',
+    link: 'https://nextjs.org',
     badges: ['frontend', 'backend'],
   },
   {
     key: 'typescript',
+    link: 'https://www.typescriptlang.org',
     badges: ['backend', 'frontend'],
   },
   {
     key: 'tailwind',
+    link: 'https://tailwindcss.com',
     badges: ['frontend'],
   },
   {
     key: 'shadcn',
+    link: 'https://ui.shadcn.com',
     badges: ['frontend'],
   },
   {
     key: 'esp32',
+    link: 'https://www.espressif.com/en/products/socs/esp32',
+    badges: ['hardware'],
+  },
+  {
+    key: 'freertos',
+    link: 'https://www.freertos.org',
     badges: ['hardware'],
   },
   {
     key: 'platformio',
-    badges: ['development'],
+    link: 'https://platformio.org',
+    badges: ['hardware', 'development'],
   },
+]
+
+const futureStack: TechItem[] = [
   {
     key: 'prisma',
-    badges: ['database'],
+    link: 'https://www.prisma.io',
+    badges: ['backend', 'database'],
   },
   {
     key: 'postgresql',
+    link: 'https://www.postgresql.org',
     badges: ['database'],
+  },
+  {
+    key: 'jest',
+    link: 'https://jestjs.io',
+    badges: ['frontend', 'backend', 'development'],
+  },
+  {
+    key: 'oauth',
+    link: 'https://oauth.net',
+    badges: ['backend'],
+  },
+  {
+    key: 'cicd',
+    link: 'https://github.com/features/actions',
+    badges: ['development'],
+  },
+  {
+    key: 'clangformat',
+    link: 'https://clang.llvm.org/docs/ClangFormat.html',
+    badges: ['hardware', 'development'],
   },
 ]
 
@@ -67,24 +109,74 @@ export default async function TechStackPage({ params }: { params: Promise<{ loca
 
   return (
     <PageLayout title={t('title')} description={t('description')}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {techStack.map((item) => (
-          <Card key={item.key}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t(`items.${item.key}.name`)}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>{t(`items.${item.key}.description`)}</CardDescription>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {item.badges.map((badge) => (
-                  <Badge key={`${item.key}-${badge}`} variant={badge}>
-                    {t(`badges.${badge}`)}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-8">
+        <section>
+          <h2 className="text-2xl font-bold mb-4">{t('currentStack')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {techStack.map((item) => (
+              <Card key={item.key}>
+                <CardHeader className="pb-3">
+                  <div className="flex flex-row justify-between items-center">
+                    <CardTitle className="text-base">
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline cursor-default"
+                      >
+                        {t(`items.${item.key}.name`)}
+                      </a>
+                    </CardTitle>
+                    <div className="flex flex-row flex-wrap gap-1">
+                      {item.badges.map((badge) => (
+                        <Badge key={`${item.key}-${badge}`} variant={badge}>
+                          {t(`badges.${badge}`)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{t(`items.${item.key}.description`)}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold mb-4">{t('futureStack')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {futureStack.map((item) => (
+              <Card key={item.key} className="border-dashed border-2 opacity-75">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-row justify-between items-center">
+                    <CardTitle className="text-base">
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline cursor-default"
+                      >
+                        {t(`items.${item.key}.name`)}
+                      </a>
+                    </CardTitle>
+                    <div className="flex flex-row flex-wrap gap-1">
+                      {item.badges.map((badge) => (
+                        <Badge key={`${item.key}-${badge}`} variant={badge}>
+                          {t(`badges.${badge}`)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{t(`items.${item.key}.description`)}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
       </div>
     </PageLayout>
   )
