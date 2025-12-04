@@ -11,18 +11,17 @@ datasource db {
 }
 
 model User {
-  id             String              @id @default(cuid())
-  email          String              @unique
-  emailVerified  DateTime?
-  name           String?
-  image          String?
-  password       String?
-  role           String              @default("user")
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  profile        Profile?
-  accounts       Account[]
-  verificationTokens VerificationToken[]
+  id            String     @id @default(cuid())
+  email         String     @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?
+  role          String     @default("user")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  profile       Profile?
+  accounts      Account[]
 }
 
 model Profile {
@@ -57,12 +56,9 @@ model Account {
 }
 
 model VerificationToken {
-  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expires    DateTime
-
-  user User? @relation(fields: [identifier], references: [id])
 
   @@unique([identifier, token])
 }
