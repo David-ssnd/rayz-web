@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
 import type { ConnectedDevice } from '@/types/hardware'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { ConnectedDeviceCard } from '@/components/ConnectedDeviceCard'
 
 export async function generateMetadata({
@@ -16,13 +19,6 @@ export async function generateMetadata({
     title: t('metaTitle'),
     description: t('metaDescription'),
   }
-}
-
-const newDevice: ConnectedDevice = {
-  id: 'new',
-  name: 'New Device',
-  ipAddress: '',
-  status: 'online',
 }
 
 const Devices: ConnectedDevice[] = [
@@ -47,8 +43,19 @@ export default async function ControlPanelPage({
       <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="mb-6">{t('description')}</p>
       <div className="grid grid-cols-1 gap-4">
-        {/* Add devices via ip address on LAN */}
-        <ConnectedDeviceCard {...newDevice} key={newDevice.id} isNew />
+        {/*Add new device*/}
+        <Card className="border-dashed border-2 opacity-75">
+          <CardHeader>
+            <CardTitle>{t('addDeviceByIp')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="flex flex-row gap-2">
+              <Input />
+              <Button variant={'default'}>{t('addDevice')}</Button>
+            </CardDescription>
+          </CardContent>
+        </Card>
+
         {Devices.map((device) => (
           <ConnectedDeviceCard {...device} key={device.id} {...device} />
         ))}

@@ -15,7 +15,9 @@
     "title": "Ovládací panel",
     "description": "Ovládajte a sledujte pripojené hardvérové zariadenia",
     "metaTitle": "Ovládanie | RayZ",
-    "metaDescription": "Ovládací panel na správu hardvérových zariadení"
+    "metaDescription": "Ovládací panel na správu hardvérových zariadení",
+    "addDeviceByIp": "Pridať zariadenie podľa IP adresy na LAN:",
+    "addDevice": "Pridať zariadenie"
   },
   "Presentation": {
     "title": "Prezentácia projektu",

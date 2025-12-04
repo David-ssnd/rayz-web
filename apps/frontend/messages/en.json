@@ -15,7 +15,9 @@
     "title": "Control Panel",
     "description": "Control and monitor connected hardware devices",
     "metaTitle": "Control | RayZ",
-    "metaDescription": "Control panel for managing hardware devices"
+    "metaDescription": "Control panel for managing hardware devices",
+    "addDeviceByIp": "Add device by IP address on LAN:",
+    "addDevice": "Add Device"
   },
   "Presentation": {
     "title": "Project Presentation",
