@@ -40,38 +40,53 @@ export const HardwareDeviceCard = memo(
     }, [scheme_img_url, name])
 
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-large">{name}</CardTitle>
+      <Card className="flex flex-col h-full">
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+          <CardTitle className="text-base sm:text-lg font-semibold">{name}</CardTitle>
           <DeviceBadge badge={badge} badgeVariant={badgeVariant} />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col">
           {/* Real image display */}
           {real_img_url && (
-            <div className="mb-4 flex flex-col items-center">
-              <img src={real_img_url} alt={`${name} Image`} className="object-cover rounded-md" />
+            <div className="mb-3 sm:mb-4 flex flex-col items-center">
+              <img
+                src={real_img_url}
+                alt={`${name} Image`}
+                className="object-cover rounded-md w-full"
+              />
             </div>
           )}
 
           {/* Microcontroller info */}
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Microcontroller: {microcontroller}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Microcontroller: {microcontroller}
+            </p>
           </div>
 
           {/* Description */}
-          <CardDescription className="mt-4 text-sm">{description}</CardDescription>
+          <CardDescription className="mt-3 sm:mt-4 text-xs sm:text-sm">
+            {description}
+          </CardDescription>
 
           {/* Scheme dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="mt-4 w-full" disabled={!scheme_img_url}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4 w-full text-xs sm:text-sm"
+                disabled={!scheme_img_url}
+              >
                 View Scheme
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] max-h-[95vh]">
+            <DialogContent className="max-w-[95vw] max-h-[90vh] sm:max-h-[95vh] w-full">
               <DialogHeader>
-                <DialogTitle>{name} - Circuit Scheme</DialogTitle>
-                <DialogDescription>Detailed circuit schematic for {name}</DialogDescription>
+                <DialogTitle className="text-lg sm:text-xl">{name} - Circuit Scheme</DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm">
+                  Detailed circuit schematic for {name}
+                </DialogDescription>
               </DialogHeader>
 
               <ZoomControls
@@ -82,7 +97,7 @@ export const HardwareDeviceCard = memo(
               />
 
               {/* Zoomable image container */}
-              <div className="relative overflow-auto max-h-[75vh] border rounded-md bg-muted/20">
+              <div className="relative overflow-auto max-h-[60vh] sm:max-h-[75vh] border rounded-md bg-muted/20">
                 <div
                   style={{
                     width: `${zoom * 100}%`,

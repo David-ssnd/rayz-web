@@ -54,7 +54,7 @@ export default async function HardwarePage({ params }: { params: Promise<{ local
 
   return (
     <PageLayout title={t('title')} description={t('description')}>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {mockDevices.map((device) => (
           <HardwareDeviceCard key={device.name} {...device} />
         ))}

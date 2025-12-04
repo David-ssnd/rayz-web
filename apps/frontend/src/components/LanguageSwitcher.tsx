@@ -6,9 +6,20 @@ import { useParams } from 'next/navigation'
 import { usePathname, useRouter } from '@/i18n/routing'
 import ReactCountryFlag from 'react-country-flag'
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 type Locale = 'en' | 'sk'
+
+const locales: Record<Locale, { label: string; code: string }> = {
+  en: { label: 'English', code: 'GB' },
+  sk: { label: 'Slovenčina', code: 'SK' },
+}
 
 export function LanguageSwitcher() {
   const [mounted, setMounted] = React.useState(false)
@@ -32,35 +43,30 @@ export function LanguageSwitcher() {
 
   if (!mounted) {
     // Return a placeholder with the same dimensions during SSR
-    return <div className="bg-background border rounded-full p-0.5 h-8 w-[60px]" />
+    return <div className="h-9 w-9" />
   }
 
   return (
-    <ToggleGroup
-      type="single"
-      value={currentLocale}
-      onValueChange={(value) => {
-        if (value) onSelectChange(value as Locale)
-      }}
-      className="bg-background border rounded-full p-0.5"
-      disabled={isPending}
-    >
-      <ToggleGroupItem
-        value="en"
-        aria-label="English"
-        size="sm"
-        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        <ReactCountryFlag countryCode="GB" svg />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="sk"
-        aria-label="Slovak"
-        size="sm"
-        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        <ReactCountryFlag countryCode="SK" svg />
-      </ToggleGroupItem>
-    </ToggleGroup>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-9 w-9" disabled={isPending}>
+          <ReactCountryFlag countryCode={locales[currentLocale].code} svg />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {(Object.entries(locales) as [Locale, (typeof locales)[Locale]][]).map(
+          ([locale, { label, code }]) => (
+            <DropdownMenuItem
+              key={locale}
+              onClick={() => onSelectChange(locale)}
+              className="cursor-pointer"
+            >
+              <ReactCountryFlag countryCode={code} svg className="mr-2" />
+              {label}
+            </DropdownMenuItem>
+          )
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

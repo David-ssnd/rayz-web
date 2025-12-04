@@ -1,10 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { Monitor, MoonStar, Sun } from 'lucide-react'
+import { MoonStar, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Button } from '@/components/ui/button'
 
 export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false)
@@ -17,42 +17,28 @@ export function ThemeToggle() {
 
   if (!mounted) {
     // Return a placeholder with the same dimensions during SSR
-    return <div className="bg-background border rounded-full p-0.5 h-8 w-[88px]" />
+    return <div className="h-9 w-9" />
+  }
+
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+  const toggleTheme = () => {
+    setTheme(isDark ? 'light' : 'dark')
   }
 
   return (
-    <ToggleGroup
-      type="single"
-      value={theme}
-      onValueChange={(value) => {
-        if (value) setTheme(value)
-      }}
-      className="bg-background border rounded-full p-0.5"
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleTheme}
+      aria-label="Toggle theme"
+      className="h-9 w-9"
     >
-      <ToggleGroupItem
-        value="system"
-        aria-label="System theme"
-        size="sm"
-        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        <Monitor className="h-3 w-3" />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="light"
-        aria-label="Light theme"
-        size="sm"
-        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        <Sun className="h-3 w-3" />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="dark"
-        aria-label="Dark theme"
-        size="sm"
-        className="rounded-full h-6 w-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        <MoonStar className="h-3 w-3" />
-      </ToggleGroupItem>
-    </ToggleGroup>
+      {isDark ? <Sun className="h-5 w-5" /> : <MoonStar className="h-5 w-5" />}
+    </Button>
   )
 }
