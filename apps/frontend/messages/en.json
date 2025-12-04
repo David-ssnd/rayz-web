@@ -1,10 +1,21 @@
 {
   "Navigation": {
+    "control": "Control",
     "presentation": "Presentation",
     "hardware": "Hardware",
     "techStack": "Tech Stack",
     "github": "Github",
     "documentation": "Documentation"
+  },
+  "CPNavigation": {
+    "control": "Control Panel",
+    "back": "Back to site"
+  },
+  "Control": {
+    "title": "Control Panel",
+    "description": "Control and monitor connected hardware devices",
+    "metaTitle": "Control | RayZ",
+    "metaDescription": "Control panel for managing hardware devices"
   },
   "Presentation": {
     "title": "Project Presentation",
@@ -108,6 +119,6 @@
   },
   "Common": {
     "dashboardTitle": "RayZ Dashboard",
-    "dashboardDescription": "Hardware and software monitoring dashboard for RayZ project"
+    "dashboardDescription": "Central panel for managing and monitoring the RayZ system."
   }
 }

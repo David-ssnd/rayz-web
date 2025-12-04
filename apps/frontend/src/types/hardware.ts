@@ -7,3 +7,19 @@ export interface HardwareDevice {
   badge?: string
   badgeVariant?: 'Target' | 'BowArrow' | 'Connected'
 }
+
+export interface color {
+  id: string
+  name: string
+  hex: string
+}
+
+export interface ConnectedDevice {
+  id: string
+  name: string
+  ipAddress: string
+  status?: 'online' | 'offline'
+  role?: 'target' | 'weapon' | 'other'
+  team?: string
+  color?: color
+}

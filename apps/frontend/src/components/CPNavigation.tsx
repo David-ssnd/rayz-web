@@ -23,31 +23,19 @@ import {
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
-export function Navigation() {
-  const t = useTranslations('Navigation')
+export function CPNavigation() {
+  const t = useTranslations('CPNavigation')
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = [
     { label: t('control'), href: '/control' },
-    { label: t('presentation'), href: '/presentation' },
-    { label: t('hardware'), href: '/hardware' },
-    { label: t('techStack'), href: '/techstack' },
-  ]
-
-  const externalItems = [
-    { label: t('github'), href: 'https://github.com/David-ssnd/RayZ' },
-    {
-      label: t('documentation'),
-      href: 'https://docs.google.com/document/d/1u_znfRPnOI1DHgK9Md7V5L7YhYJi6iWcMULM_RJ-6mI/edit?usp=sharing',
-    },
+    { label: t('back'), href: '/presentation' },
   ]
 
   return (
     <>
-      {/* Desktop Navigation (md and up) */}
       <div className="hidden md:flex items-center justify-between w-full gap-4">
-        {/* Logo */}
-        <img src="/rayz-trim.svg" alt="RayZ" className="h-8 w-auto object-contain shrink-0" />
+        <img src="/rayz-trim.svg" alt="RayZ" className="h-6 w-auto object-contain shrink-0" />
 
         {/* Desktop Navigation Menu */}
         <div className="flex items-center flex-1 lg:gap-0 md:gap-0">
@@ -57,18 +45,6 @@ export function Navigation() {
                 <NavigationMenuItem key={item.href}>
                   <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                     <Link href={item.href}>{item.label}</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-              {externalItems.map((item) => (
-                <NavigationMenuItem key={item.href}>
-                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                    <a href={item.href} target="_blank" rel="noopener noreferrer">
-                      <div className="flex items-center gap-1">
-                        {item.label}
-                        <ExternalLink className="h-4 w-4" />
-                      </div>
-                    </a>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               ))}
@@ -108,20 +84,6 @@ export function Navigation() {
                   {item.label}
                 </Link>
               ))}
-              <div className="border-t pt-4 space-y-2">
-                {externalItems.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium hover:underline flex items-center gap-1"
-                  >
-                    {item.label}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
             </div>
           </SheetContent>
         </Sheet>

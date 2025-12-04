@@ -1,10 +1,21 @@
 {
   "Navigation": {
+    "control": "Ovládanie",
     "presentation": "Prezentácia",
     "hardware": "Hardvér",
     "techStack": "Technológie",
     "github": "Github",
     "documentation": "Dokumentácia"
+  },
+  "CPNavigation": {
+    "control": "Ovládací panel",
+    "back": "Späť na stránku"
+  },
+  "Control": {
+    "title": "Ovládací panel",
+    "description": "Ovládajte a sledujte pripojené hardvérové zariadenia",
+    "metaTitle": "Ovládanie | RayZ",
+    "metaDescription": "Ovládací panel na správu hardvérových zariadení"
   },
   "Presentation": {
     "title": "Prezentácia projektu",

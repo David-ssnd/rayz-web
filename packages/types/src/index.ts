@@ -5,6 +5,24 @@ export interface User {
   createdAt: Date
 }
 
+export interface Profile {
+  id: string
+  userId: string
+  bio: string | null
+  avatarUrl: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Target {
+  id: string
+  userId: string
+  bio: string | null
+  avatarUrl: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface Target {
   id: string
   name: string

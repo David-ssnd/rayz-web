@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=backend",
+  "outputDirectory": ".next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
+}
