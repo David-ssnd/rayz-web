@@ -2,24 +2,24 @@
   "folders": [
     {
       "path": ".",
-      "name": "Web Root"
+      "name": "Web Root",
     },
     {
       "path": "apps/frontend",
-      "name": "Frontend"
+      "name": "Frontend",
     },
     {
       "path": "apps/backend",
-      "name": "Backend"
+      "name": "Backend",
     },
     {
       "path": "packages/types",
-      "name": "Types"
+      "name": "Types",
     },
     {
       "path": "packages/ui",
-      "name": "UI Components"
-    }
+      "name": "UI Components",
+    },
   ],
   "settings": {
     "typescript.tsdk": "node_modules/typescript/lib",
@@ -27,19 +27,19 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "explicit",
     },
     "eslint.workingDirectories": [
       "./apps/frontend",
       "./apps/backend",
       "./packages/types",
-      "./packages/ui"
+      "./packages/ui",
     ],
     "files.exclude": {
       "**/node_modules": true,
       "**/.next": true,
-      "**/.turbo": true
-    }
+      "**/.turbo": true,
+    },
   },
   "extensions": {
     "recommendations": [
@@ -47,7 +47,7 @@
       "dbaeumer.vscode-eslint",
       "bradlc.vscode-tailwindcss",
       "prisma.prisma",
-      "ms-vscode.vscode-typescript-next"
-    ]
-  }
+      "ms-vscode.vscode-typescript-next",
+    ],
+  },
 }
