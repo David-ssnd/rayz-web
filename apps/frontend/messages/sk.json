@@ -96,10 +96,6 @@
         "name": "Jest",
         "description": "Framework na testovanie JavaScriptu."
       },
-      "oauth": {
-        "name": "OAuth a prihlásenie",
-        "description": "Autentifikácia a autorizácia používateľov."
-      },
       "cicd": {
         "name": "CI/CD",
         "description": "Kontinuálna integrácia a nasadenie."

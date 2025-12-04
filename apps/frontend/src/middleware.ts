@@ -1,16 +1,12 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextRequest } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 
 import { routing } from './i18n/routing'
 
-const intlMiddleware = createIntlMiddleware(routing)
-
-const isProtectedRoute = createRouteMatcher(['/:locale/control(.*)', '/:locale/profile(.*)'])
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect()
-  return intlMiddleware(req)
-})
+export default function middleware(request: NextRequest) {
+  const handleI18nRouting = createIntlMiddleware(routing)
+  return handleI18nRouting(request)
+}
 
 export const config = {
   // Match only internationalized pathnames

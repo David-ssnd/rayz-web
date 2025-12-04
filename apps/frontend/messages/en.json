@@ -96,10 +96,6 @@
         "name": "Jest",
         "description": "JavaScript testing framework"
       },
-      "oauth": {
-        "name": "OAuth & Login",
-        "description": "Authentication and authorization"
-      },
       "cicd": {
         "name": "CI/CD",
         "description": "Continuous integration and deployment"

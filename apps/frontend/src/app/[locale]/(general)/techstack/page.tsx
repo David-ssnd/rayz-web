@@ -87,11 +87,6 @@ const futureStack: TechItem[] = [
     badges: ['frontend', 'backend', 'development'],
   },
   {
-    key: 'oauth',
-    link: 'https://oauth.net',
-    badges: ['backend'],
-  },
-  {
     key: 'cicd',
     link: 'https://github.com/features/actions',
     badges: ['development'],
