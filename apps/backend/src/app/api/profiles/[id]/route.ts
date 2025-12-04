@@ -3,9 +3,10 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// GET /api/profiles/[id] - Get a single profile by ID
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// GET /api/profiles/[id]
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const { params } = context
     const { id } = await params
 
     const profile = await prisma.profile.findUnique({
@@ -32,14 +33,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// PUT /api/profiles/[id] - Update a profile by ID
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// PUT /api/profiles/[id]
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const { params } = context
     const { id } = await params
-    const body = await request.json()
-    const { bio, avatarUrl } = body
 
-    // Check if profile exists
+    const { bio, avatarUrl } = await request.json()
+
     const existingProfile = await prisma.profile.findUnique({
       where: { id },
     })
@@ -72,15 +73,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// DELETE /api/profiles/[id] - Delete a profile by ID
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE /api/profiles/[id]
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const { params } = context
     const { id } = await params
 
-    // Check if profile exists
     const existingProfile = await prisma.profile.findUnique({
       where: { id },
     })

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { ensureAdapterSecret } from '../../../../../../lib/adapter-secret'
-import { prisma } from '../../../../../../lib/prisma'
+import { ensureAdapterSecret } from '../../../../../lib/adapter-secret'
+import { prisma } from '../../../../../lib/prisma'
 
 export async function POST(request: Request) {
   const unauthorized = ensureAdapterSecret(request)

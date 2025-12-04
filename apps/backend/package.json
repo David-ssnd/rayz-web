@@ -14,12 +14,14 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "@rayz/types": "workspace:*",
     "dotenv": "^17.2.3",
     "next": "^16.0.7",
+    "next-auth": "5.0.0-beta.30",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "zod": "^4.1.13"

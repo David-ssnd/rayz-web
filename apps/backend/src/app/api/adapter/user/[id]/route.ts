@@ -4,27 +4,31 @@ import { ensureAdapterSecret } from '../../../../../lib/adapter-secret'
 import { prisma } from '../../../../../lib/prisma'
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(request: Request, context: Params) {
   const unauthorized = ensureAdapterSecret(request)
   if (unauthorized) return unauthorized
 
-  const user = await prisma.user.findUnique({ where: { id: params.id } })
+  const { id } = await context.params
+
+  const user = await prisma.user.findUnique({ where: { id } })
   return NextResponse.json(user)
 }
 
-export async function PUT(request: Request, { params }: Params) {
+export async function PUT(request: Request, context: Params) {
   const unauthorized = ensureAdapterSecret(request)
   if (unauthorized) return unauthorized
 
   const payload = await request.json()
 
+  const { id } = await context.params
+
   const user = await prisma.user.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       email: payload.email ?? undefined,
       name: payload.name ?? undefined,

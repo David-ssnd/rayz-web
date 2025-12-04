@@ -57,7 +57,7 @@ async function verifyCredentials(email: string, password: string): Promise<Adapt
 }
 
 export const authConfig: NextAuthConfig = {
-  adapter: backendAdapter(),
+  // adapter: backendAdapter(),
   session: {
     strategy: 'jwt',
     maxAge: SESSION_MAX_AGE,
