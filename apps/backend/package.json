@@ -14,21 +14,22 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.18.0",
+    "@prisma/client": "^7.1.0",
     "@rayz/types": "workspace:*",
+    "dotenv": "^17.2.3",
     "next": "^16.0.7",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "zod": "^3.22.0"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@rayz/eslint-config": "workspace:*",
     "@rayz/typescript-config": "workspace:*",
-    "@types/node": "^20.19.24",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.0",
-    "prisma": "^6.18.0",
+    "eslint": "^9.39.1",
+    "prisma": "^7.1.0",
     "typescript": "^5.9.3"
   }
 }
