@@ -1,7 +1,7 @@
 {
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=backend",
   "outputDirectory": ".next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --ignore-scripts=false",
   "framework": "nextjs",
   "rewrites": [
     {
