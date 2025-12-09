@@ -2,4 +2,6 @@ import NextAuth from 'next-auth'
 
 import { authConfig } from './auth.config'
 
-export const { auth, signIn, signOut } = NextAuth(authConfig)
+const nextAuthResult = NextAuth(authConfig) as any
+
+export const { auth, signIn, signOut } = nextAuthResult

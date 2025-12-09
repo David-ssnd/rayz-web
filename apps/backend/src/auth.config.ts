@@ -2,7 +2,7 @@ import type { NextAuthConfig } from 'next-auth'
 import GitHub from 'next-auth/providers/github'
 import Google from 'next-auth/providers/google'
 
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -13,4 +13,4 @@ export const authConfig = {
       clientSecret: process.env.AUTH_GITHUB_SECRET,
     }),
   ],
-} satisfies NextAuthConfig
+}

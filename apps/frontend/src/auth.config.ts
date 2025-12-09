@@ -93,17 +93,17 @@ export const authConfig: NextAuthConfig = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials?: Record<'email' | 'password', string>) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
           return null
         }
 
-        return verifyCredentials(credentials.email, credentials.password)
+        return verifyCredentials(credentials.email as string, credentials.password as string)
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: AdapterUser | null }) {
+    async jwt({ token, user }: { token: JWT; user?: AdapterUser | any }) {
       if (user) {
         token.id = user.id
         token.email = user.email
@@ -133,7 +133,7 @@ export const authConfig: NextAuthConfig = {
           JWT_MAX_AGE
         )
 
-        ;(session as Record<string, unknown>).token = apiToken
+        ;(session as unknown as Record<string, unknown>).token = apiToken
       }
 
       return session

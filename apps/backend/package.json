@@ -8,18 +8,14 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint .",
-    "clean": "rm -rf .next .turbo node_modules",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
-    "@neondatabase/serverless": "^1.0.2",
-    "@prisma/adapter-neon": "^7.1.0",
-    "@prisma/client": "^7.1.0",
+    "@rayz/database": "workspace:*",
     "@rayz/types": "workspace:*",
     "dotenv": "^17.2.3",
+    "jose": "^6.1.3",
     "next": "^16.0.7",
     "next-auth": "5.0.0-beta.30",
     "react": "^19.2.1",
@@ -33,7 +29,6 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.1",
-    "prisma": "^7.1.0",
     "typescript": "^5.9.3"
   }
 }

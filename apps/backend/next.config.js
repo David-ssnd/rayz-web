@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@rayz/types'],
+  transpilePackages: ['@rayz/types', '@rayz/database'],
 }
 
 export default nextConfig

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { hashPassword } from '../../../../../lib/password'
-import { prisma } from '../../../../../lib/prisma'
+import { hashPassword } from '../../../../lib/password'
+import { prisma } from '../../../../lib/prisma'
 
 const registerSchema = z.object({
   name: z.string().min(2).max(60).trim(),
