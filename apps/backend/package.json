@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
+    "postinstall": "cd ../.. && pnpm prisma generate",
     "start": "next start -p 3001",
     "lint": "eslint .",
     "clean": "rm -rf .next .turbo node_modules"
