@@ -1,19 +1,32 @@
-import { neon } from '@neondatabase/serverless'
+import { neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { PrismaClient } from '@prisma/client'
+import ws from 'ws'
 
 export * from '@prisma/client'
+
+// Configure WebSocket for Node.js environment
+neonConfig.webSocketConstructor = ws
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient
 }
 
-const createClient = () => {
+function getConnectionUrl(): string {
   const url = process.env.DATABASE_URL
-  if (!url) throw new Error('DATABASE_URL missing')
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL is not set. Make sure it is defined in your environment variables.'
+    )
+  }
+  return url
+}
 
-  const connection = neon(url)
-  const adapter = new PrismaNeon(connection)
+function createClient(): PrismaClient {
+  const connectionString = getConnectionUrl()
+
+  // Pass connectionString directly to PrismaNeon adapter (new API in Prisma 7+)
+  const adapter = new PrismaNeon({ connectionString })
 
   return new PrismaClient({
     adapter,
@@ -23,4 +36,6 @@ const createClient = () => {
 
 export const prisma = globalForPrisma.prisma ?? createClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+}
