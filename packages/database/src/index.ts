@@ -8,6 +8,7 @@ export * from '@prisma/client'
 // Configure WebSocket for Node.js environment
 neonConfig.webSocketConstructor = ws
 
+// Global Prisma instance
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient
 }

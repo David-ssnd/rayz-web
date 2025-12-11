@@ -14,10 +14,7 @@ export default auth((req) => {
   // API Protection
   if (nextUrl.pathname.startsWith('/api')) {
     // Public API routes
-    if (
-      nextUrl.pathname.startsWith('/api/auth') ||
-      nextUrl.pathname.startsWith('/api/health')
-    ) {
+    if (nextUrl.pathname.startsWith('/api/auth') || nextUrl.pathname.startsWith('/api/health')) {
       return
     }
 
@@ -30,7 +27,7 @@ export default auth((req) => {
 
   // i18n Routing for pages
   return intlMiddleware(req)
-})
+}) as any
 
 export const config = {
   matcher: ['/((?!_next|_vercel|.*\\..*).*)'],

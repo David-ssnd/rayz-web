@@ -8,21 +8,24 @@ import { Input } from './ui/input'
 
 type ConnectedDeviceCardProps = ConnectedDevice & {
   isNew?: boolean
+  onDelete?: () => void
 }
 
-export function ConnectedDeviceCard({ ...props }: ConnectedDeviceCardProps) {
+export function ConnectedDeviceCard({ onDelete, ...props }: ConnectedDeviceCardProps) {
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-row justify-between items-center">
           <CardTitle>{props.name}</CardTitle>
-          <Button variant={'destructive'} size={'sm'}>
-            <Trash2 />
-          </Button>
+          {onDelete && (
+            <Button variant={'destructive'} size={'sm'} onClick={onDelete}>
+              <Trash2 />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        <CardDescription>Device details here</CardDescription>
+        <CardDescription>IP: {props.ipAddress}</CardDescription>
       </CardContent>
     </Card>
   )

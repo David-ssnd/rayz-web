@@ -58,7 +58,7 @@ export default async function LocaleLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main className="flex min-h-screen flex-col items-center px-1 py-1">
+            <main className="flex min-h-screen flex-col items-center p-2">
               <div className="w-full max-w-6xl gap-2 flex flex-col">
                 <CPNavigation />
                 <div>{children}</div>

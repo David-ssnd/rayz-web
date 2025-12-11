@@ -10,9 +10,24 @@ import { prisma } from '@/lib/server/prisma'
 
 import { authConfig } from './auth.config'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
+  session: { strategy: 'jwt' },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = (token.id as string) || (token.sub as string)
+      }
+      return session
+    },
+  },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -31,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data
           const user = await prisma.user.findUnique({ where: { email } })
-          if (!user) return null
+          if (!user || !user.password) return null
           const passwordsMatch = await verifyPassword(password, user.password)
 
           if (passwordsMatch) return user
@@ -43,3 +58,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
 })
+
+export const { handlers, auth, signIn, signOut } = nextAuth as any

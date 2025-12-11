@@ -22,4 +22,5 @@ export interface ConnectedDevice {
   role?: 'target' | 'weapon' | 'other'
   team?: string
   color?: color
+  projectId?: string | null
 }
