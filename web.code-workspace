@@ -2,23 +2,6 @@
   "folders": [
     {
       "path": ".",
-      "name": "Web Root",
-    },
-    {
-      "path": "apps/frontend",
-      "name": "Frontend",
-    },
-    {
-      "path": "apps/backend",
-      "name": "Backend",
-    },
-    {
-      "path": "packages/types",
-      "name": "Types",
-    },
-    {
-      "path": "packages/ui",
-      "name": "UI Components",
     },
   ],
   "settings": {
@@ -29,12 +12,7 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit",
     },
-    "eslint.workingDirectories": [
-      "./apps/frontend",
-      "./apps/backend",
-      "./packages/types",
-      "./packages/ui",
-    ],
+    "eslint.workingDirectories": ["./"],
     "files.exclude": {
       "**/node_modules": true,
       "**/.next": true,
