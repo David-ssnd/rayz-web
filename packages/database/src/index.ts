@@ -1,7 +1,8 @@
 import { neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { PrismaClient } from './generated/client'
 import ws from 'ws'
+
+import { PrismaClient } from './generated/client'
 
 export * from './generated/client'
 export { PrismaClient }
