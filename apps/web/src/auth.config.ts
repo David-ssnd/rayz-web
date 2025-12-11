@@ -2,8 +2,8 @@ import type { NextAuthConfig } from 'next-auth'
 
 export const authConfig = {
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error',
+    signIn: '/signin',
+    error: '/signin',
   },
   session: {
     strategy: 'jwt',
