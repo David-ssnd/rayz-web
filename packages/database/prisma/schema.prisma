@@ -101,7 +101,7 @@ model Project {
 
 model GameMode {
   id          String    @id @default(cuid())
-  name        String
+  name        String    @unique
   description String?
   
   duration    Int?      @default(10)
