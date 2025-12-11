@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import ws from 'ws'
 
 export * from '@prisma/client'
+export { PrismaClient }
 
 // Configure WebSocket for Node.js environment
 neonConfig.webSocketConstructor = ws
