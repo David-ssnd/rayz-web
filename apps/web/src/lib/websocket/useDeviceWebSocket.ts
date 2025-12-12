@@ -209,7 +209,7 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
           }
         }
       } catch (error) {
-        console.error(`[WS ${ipAddress}] Failed to parse message:`, error)
+        console.warn(`[WS ${ipAddress}] Failed to parse message:`, error)
       }
     },
     [ipAddress, onMessage, onStatus, onShotFired, onHitReport, onRespawn]
@@ -279,7 +279,9 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
 
       ws.onerror = (error) => {
         if (!mountedRef.current) return
-        console.error(`[WS ${ipAddress}] Error:`, error)
+        // Treat connection problems as a normal offline state; avoid logging
+        // because Next.js dev overlay surfaces console.error and users may
+        // interpret warnings as failures during normal offline operation.
         setState((prev) => ({
           ...prev,
           lastError: 'Connection error',
@@ -305,7 +307,6 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         }
       }
     } catch (error) {
-      console.error(`[WS ${ipAddress}] Failed to create WebSocket:`, error)
       updateConnectionState('error')
       setState((prev) => ({
         ...prev,

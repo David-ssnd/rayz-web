@@ -248,7 +248,7 @@ export function DeviceConnectionsProvider({
           }
         }
       } catch (error) {
-        console.error(`[WS ${ip}] Failed to parse message:`, error)
+        console.warn(`[WS ${ip}] Failed to parse message:`, error)
       }
     },
     [updateDeviceState]
@@ -297,7 +297,8 @@ export function DeviceConnectionsProvider({
         ws.onmessage = (event) => handleMessage(ip, event)
 
         ws.onerror = (error) => {
-          console.error(`[WS ${ip}] Error:`, error)
+          // Treat connection problems as a normal offline state; avoid logging
+          // to prevent noisy console output during normal offline operation.
           updateDeviceState(ip, {
             connectionState: 'error',
             lastError: 'Connection error',
@@ -322,7 +323,6 @@ export function DeviceConnectionsProvider({
           }
         }
       } catch (error) {
-        console.error(`[WS ${ip}] Failed to create WebSocket:`, error)
         updateDeviceState(ip, {
           connectionState: 'error',
           lastError: 'Failed to create connection',
