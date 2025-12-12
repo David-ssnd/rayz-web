@@ -47,7 +47,7 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-9 w-9" disabled={isPending}>
           <ReactCountryFlag countryCode={locales[currentLocale].code} svg />

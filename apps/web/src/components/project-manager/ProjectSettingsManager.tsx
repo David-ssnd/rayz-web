@@ -56,7 +56,7 @@ export function ProjectSettingsManager({
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Game Mode</label>
-            <Select value={gameModeId} onValueChange={setGameModeId} modal={false}>
+            <Select value={gameModeId} onValueChange={setGameModeId}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

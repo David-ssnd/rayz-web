@@ -97,7 +97,7 @@ export function Navigation() {
           <LanguageSwitcher />
           <ThemeToggle />
           {session ? (
-            <DropdownMenu modal={false}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
@@ -180,7 +180,7 @@ export function Navigation() {
           <LanguageSwitcher />
           <ThemeToggle />
           {session ? (
-            <DropdownMenu modal={false}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
