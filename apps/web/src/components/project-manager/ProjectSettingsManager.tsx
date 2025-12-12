@@ -19,11 +19,11 @@ import { GameMode, Project } from './types'
 export function ProjectSettingsManager({
   project,
   gameModes,
-  onDelete,
+  onDeleteAction,
 }: {
   project: Project
   gameModes: GameMode[]
-  onDelete: () => void
+  onDeleteAction: () => void
 }) {
   const [name, setName] = useState(project.name)
   const [description, setDescription] = useState(project.description || '')
@@ -56,7 +56,7 @@ export function ProjectSettingsManager({
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Game Mode</label>
-            <Select value={gameModeId} onValueChange={setGameModeId}>
+            <Select value={gameModeId} onValueChange={setGameModeId} modal={false}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -71,7 +71,11 @@ export function ProjectSettingsManager({
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium">Duration (minutes)</label>
-            <Input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
+            <Input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value) || 0)}
+            />
           </div>
         </div>
         <Button onClick={handleSave} disabled={isPending}>
@@ -85,7 +89,7 @@ export function ProjectSettingsManager({
           Deleting a project is irreversible. All teams, players, and data associated with this
           project will be permanently removed.
         </p>
-        <Button variant="destructive" onClick={onDelete}>
+        <Button variant="destructive" onClick={onDeleteAction}>
           <Trash2 className="w-4 h-4 mr-2" /> Delete Project
         </Button>
       </div>

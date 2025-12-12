@@ -2,14 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { createProject, deleteProject } from '@/features/projects/actions'
-import { Gamepad2, Monitor, Plus, Settings, Users } from 'lucide-react'
+import { Gamepad2, LayoutDashboard, Monitor, Plus, Settings, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
+import { DeviceConnectionsProvider } from '@/lib/websocket'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import { GameOverview } from './project-manager/GameOverview'
 import { PlayerManager } from './project-manager/PlayerManager'
 import { ProjectDeviceManager } from './project-manager/ProjectDeviceManager'
 import { ProjectSettingsManager } from './project-manager/ProjectSettingsManager'
@@ -60,7 +62,8 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-64 flex flex-col gap-2">
+        {/* Project Sidebar - Fixed width */}
+        <div className="w-full md:w-64 md:min-w-64 md:max-w-64 flex flex-col gap-2">
           {projects.map((project) => (
             <Button
               key={project.id}
@@ -98,55 +101,91 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
             </Card>
           ) : (
             selectedProject && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>{selectedProject.name}</CardTitle>
-                    <CardDescription>Game Mode: {selectedProject.gameMode.name}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="teams">
-                    <TabsList>
-                      <TabsTrigger value="teams">
-                        <Users className="w-4 h-4 mr-2" /> Teams
-                      </TabsTrigger>
-                      <TabsTrigger value="players">
-                        <Gamepad2 className="w-4 h-4 mr-2" /> Players
-                      </TabsTrigger>
-                      <TabsTrigger value="devices">
-                        <Monitor className="w-4 h-4 mr-2" /> Devices
-                      </TabsTrigger>
-                      <TabsTrigger value="project">
-                        <Settings className="w-4 h-4 mr-2" /> Project
-                      </TabsTrigger>
-                    </TabsList>
+              <DeviceConnectionsProvider
+                key={selectedProject.id}
+                initialDevices={selectedProject.devices?.map((d: Device) => d.ipAddress) || []}
+                autoConnect={true}
+                autoReconnect={true}
+              >
+                <Card>
+                  <CardHeader className="pb-2 sm:pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-lg sm:text-xl">{selectedProject.name}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                          {selectedProject.gameMode?.name || 'Standard'}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-6">
+                    <Tabs defaultValue="overview">
+                      <TabsList className="w-full sm:w-auto justify-start">
+                        <TabsTrigger value="overview" className="group flex-1 sm:flex-none">
+                          <LayoutDashboard className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline group-data-[state=active]:inline">
+                            Overview
+                          </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="devices" className="group flex-1 sm:flex-none">
+                          <Monitor className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline group-data-[state=active]:inline">
+                            Devices
+                          </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="teams" className="group flex-1 sm:flex-none">
+                          <Users className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline group-data-[state=active]:inline">
+                            Teams
+                          </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="players" className="group flex-1 sm:flex-none">
+                          <Gamepad2 className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline group-data-[state=active]:inline">
+                            Players
+                          </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="project" className="group flex-1 sm:flex-none">
+                          <Settings className="w-4 h-4 lg:mr-2" />
+                          <span className="hidden lg:inline group-data-[state=active]:inline">
+                            Settings
+                          </span>
+                        </TabsTrigger>
+                      </TabsList>
 
-                    <TabsContent value="teams" className="space-y-4 mt-4">
-                      <TeamManager project={selectedProject} />
-                    </TabsContent>
+                      <TabsContent value="overview" className="mt-4">
+                        <GameOverview project={selectedProject} />
+                      </TabsContent>
 
-                    <TabsContent value="players" className="space-y-4 mt-4">
-                      <PlayerManager project={selectedProject} devices={availableDevices} />
-                    </TabsContent>
+                      <TabsContent value="devices" className="mt-4">
+                        <ProjectDeviceManager
+                          project={selectedProject}
+                          availableDevices={availableDevices}
+                        />
+                      </TabsContent>
 
-                    <TabsContent value="devices" className="space-y-4 mt-4">
-                      <ProjectDeviceManager
-                        project={selectedProject}
-                        availableDevices={availableDevices}
-                      />
-                    </TabsContent>
+                      <TabsContent value="teams" className="mt-4">
+                        <TeamManager project={selectedProject} />
+                      </TabsContent>
 
-                    <TabsContent value="project" className="space-y-4 mt-4">
-                      <ProjectSettingsManager
-                        project={selectedProject}
-                        gameModes={gameModes}
-                        onDelete={() => handleDeleteProject(selectedProject.id)}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+                      <TabsContent value="players" className="mt-4">
+                        <PlayerManager
+                          project={selectedProject}
+                          devices={selectedProject.devices || []}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="project" className="mt-4">
+                        <ProjectSettingsManager
+                          project={selectedProject}
+                          gameModes={gameModes}
+                          onDeleteAction={() => handleDeleteProject(selectedProject.id)}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </DeviceConnectionsProvider>
             )
           )}
         </div>

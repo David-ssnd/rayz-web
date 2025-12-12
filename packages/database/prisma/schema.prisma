@@ -44,8 +44,9 @@ model Device {
   
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id])
-  
-  player    Player?
+
+  assignedPlayerId String?
+  assignedPlayer   Player?  @relation("PlayerDevices", fields: [assignedPlayerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,15 +123,17 @@ model GameMode {
 model Player {
   id        String   @id @default(cuid())
   name      String
+
+  /// 8-bit (0-255) ID sent via laser
+  playerId  Int      @default(10)
   
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
   teamId    String?
   team      Team?    @relation(fields: [teamId], references: [id])
-  
-  deviceId  String?  @unique
-  device    Device?  @relation(fields: [deviceId], references: [id])
+
+  devices   Device[] @relation("PlayerDevices")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

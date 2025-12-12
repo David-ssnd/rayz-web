@@ -1,0 +1,195 @@
+'use client'
+
+import { useState } from 'react'
+import {
+  Activity,
+  Pause,
+  Play,
+  RotateCcw,
+  Settings2,
+  Square,
+  Timer,
+  Wifi,
+  WifiOff,
+} from 'lucide-react'
+
+import { useDeviceConnections } from '@/lib/websocket'
+import type { GameMode as WSGameMode } from '@/lib/websocket/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+import type { Project } from './types'
+
+interface GameControlPanelProps {
+  project: Project
+}
+
+const GAME_MODES: { value: WSGameMode; label: string; description: string }[] = [
+  { value: 'free', label: 'Free Play', description: 'Open play, no restrictions' },
+  { value: 'deathmatch', label: 'Deathmatch', description: 'Everyone is enemy' },
+  { value: 'team', label: 'Team Battle', description: 'Team-based combat' },
+  { value: 'capture_flag', label: 'Capture Flag', description: 'Capture the flag mode' },
+  { value: 'timed', label: 'Timed Match', description: 'Time-limited match' },
+]
+
+export function GameControlPanel({ project }: GameControlPanelProps) {
+  const [selectedGameMode, setSelectedGameMode] = useState<WSGameMode>('free')
+  const [isGameRunning, setIsGameRunning] = useState(false)
+
+  const { broadcastCommand, connectAll, disconnectAll, connectedDevices, connections } =
+    useDeviceConnections()
+
+  const totalDevices = project.devices?.length || 0
+  const onlineCount = connectedDevices.length
+
+  // Get aggregated stats from all connected devices
+  const totalKills = connectedDevices.reduce((sum, d) => sum + (d.kills || 0), 0)
+  const totalDeaths = connectedDevices.reduce((sum, d) => sum + (d.deaths || 0), 0)
+  const totalShots = connectedDevices.reduce((sum, d) => sum + (d.shots || 0), 0)
+
+  const handleStartGame = () => {
+    broadcastCommand('start', selectedGameMode)
+    setIsGameRunning(true)
+  }
+
+  const handleStopGame = () => {
+    broadcastCommand('stop')
+    setIsGameRunning(false)
+  }
+
+  const handleResetStats = () => {
+    broadcastCommand('reset')
+  }
+
+  return (
+    <Card className="border-2 border-primary/20">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Activity className="w-5 h-5" />
+            Game Control
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant={onlineCount > 0 ? 'default' : 'secondary'} className="gap-1">
+              {onlineCount > 0 ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              {onlineCount}/{totalDevices} Online
+            </Badge>
+            {isGameRunning && (
+              <Badge variant="default" className="gap-1 bg-green-600">
+                <Activity className="w-3 h-3 animate-pulse" />
+                Live
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Game Mode Selection */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select
+            value={selectedGameMode}
+            onValueChange={(v) => setSelectedGameMode(v as WSGameMode)}
+            disabled={isGameRunning}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select game mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {GAME_MODES.map((mode) => (
+                <SelectItem key={mode.value} value={mode.value}>
+                  <div className="flex flex-col">
+                    <span>{mode.label}</span>
+                    <span className="text-xs text-muted-foreground">{mode.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Main Game Controls */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {!isGameRunning ? (
+            <Button
+              size="lg"
+              className="col-span-2 h-12 text-base gap-2"
+              onClick={handleStartGame}
+              disabled={onlineCount === 0}
+            >
+              <Play className="w-5 h-5" />
+              Start Game
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              variant="destructive"
+              className="col-span-2 h-12 text-base gap-2"
+              onClick={handleStopGame}
+            >
+              <Square className="w-5 h-5" />
+              Stop Game
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="h-12 gap-2"
+            onClick={handleResetStats}
+            disabled={isGameRunning}
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">Reset</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-12 gap-2"
+            onClick={onlineCount > 0 ? disconnectAll : connectAll}
+          >
+            {onlineCount > 0 ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+            <span className="hidden sm:inline">{onlineCount > 0 ? 'Disconnect' : 'Connect'}</span>
+          </Button>
+        </div>
+
+        {/* Live Stats */}
+        {onlineCount > 0 && (
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalKills}</div>
+              <div className="text-xs text-muted-foreground">Total Kills</div>
+            </div>
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalDeaths}</div>
+              <div className="text-xs text-muted-foreground">Total Deaths</div>
+            </div>
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalShots}</div>
+              <div className="text-xs text-muted-foreground">Total Shots</div>
+            </div>
+          </div>
+        )}
+
+        {/* No devices warning */}
+        {totalDevices === 0 && (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            Add devices to this project to start a game.
+          </div>
+        )}
+
+        {/* All offline warning */}
+        {totalDevices > 0 && onlineCount === 0 && (
+          <div className="text-center py-2 text-amber-600 text-sm">
+            No devices connected. Click "Connect" to connect all devices.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}

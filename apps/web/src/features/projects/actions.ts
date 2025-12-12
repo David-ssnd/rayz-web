@@ -19,7 +19,7 @@ export async function getProjects() {
       players: {
         include: {
           team: true,
-          device: true,
+          devices: true,
         },
       },
       devices: true,
@@ -164,7 +164,7 @@ export async function removeTeam(teamId: string) {
 
 // --- Players ---
 
-export async function addPlayer(projectId: string, name: string) {
+export async function addPlayer(projectId: string, name: string, playerId?: number) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
 
@@ -177,6 +177,7 @@ export async function addPlayer(projectId: string, name: string) {
     const player = await prisma.player.create({
       data: {
         name,
+        playerId: typeof playerId === 'number' ? playerId : undefined,
         projectId,
       },
     })
@@ -187,7 +188,7 @@ export async function addPlayer(projectId: string, name: string) {
   }
 }
 
-export async function updatePlayer(playerId: string, data: { name?: string }) {
+export async function updatePlayer(playerId: string, data: { name?: string; playerId?: number }) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
 
@@ -261,37 +262,70 @@ export async function updatePlayerDevice(playerId: string, deviceId: string | nu
     })
     if (!player || player.project.userId !== session.user.id) return { error: 'Unauthorized' }
 
-    // If assigning a device, ensure it belongs to the user and is in the project (or add it to project?)
-    // For now, let's assume the device must be in the project or just available.
-    // Actually, the schema says Device has projectId.
-    // If we assign a device to a player, the device should probably belong to the same project.
-
-    if (deviceId) {
-      const device = await prisma.device.findUnique({
-        where: { id: deviceId },
-        include: { profile: true },
-      })
-      if (!device || device.profile.userId !== session.user.id)
-        return { error: 'Device not found or unauthorized' }
-
-      // Auto-assign device to project if not already
-      if (device.projectId !== player.projectId) {
-        await prisma.device.update({
-          where: { id: deviceId },
-          data: { projectId: player.projectId },
-        })
-      }
-    }
-
-    await prisma.player.update({
-      where: { id: playerId },
-      data: { deviceId },
-    })
+    await updatePlayerDevices(playerId, deviceId ? [deviceId] : [])
     revalidatePath('/control')
     return { success: true }
   } catch (error) {
     console.error(error)
     return { error: 'Failed to update player device' }
+  }
+}
+
+export async function updatePlayerDevices(playerId: string, deviceIds: string[]) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Unauthorized' }
+
+  try {
+    const player = await prisma.player.findUnique({
+      where: { id: playerId },
+      include: { project: true },
+    })
+    if (!player || player.project.userId !== session.user.id) return { error: 'Unauthorized' }
+
+    if (deviceIds.length > 0) {
+      const devices = await prisma.device.findMany({
+        where: { id: { in: deviceIds } },
+        include: { profile: true },
+      })
+      if (devices.length !== deviceIds.length) return { error: 'Device not found' }
+      if (devices.some((d) => d.profile.userId !== session.user.id))
+        return { error: 'Device not found or unauthorized' }
+      if (devices.some((d) => d.assignedPlayerId && d.assignedPlayerId !== playerId))
+        return { error: 'One or more devices already assigned' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Ensure devices are part of the same project
+      if (deviceIds.length > 0) {
+        await tx.device.updateMany({
+          where: { id: { in: deviceIds } },
+          data: { projectId: player.projectId },
+        })
+      }
+
+      // Unassign removed devices
+      await tx.device.updateMany({
+        where: {
+          assignedPlayerId: playerId,
+          ...(deviceIds.length > 0 ? { id: { notIn: deviceIds } } : {}),
+        },
+        data: { assignedPlayerId: null },
+      })
+
+      // Assign current devices
+      if (deviceIds.length > 0) {
+        await tx.device.updateMany({
+          where: { id: { in: deviceIds } },
+          data: { assignedPlayerId: playerId },
+        })
+      }
+    })
+
+    revalidatePath('/control')
+    return { success: true }
+  } catch (error) {
+    console.error(error)
+    return { error: 'Failed to update player devices' }
   }
 }
 
@@ -337,7 +371,7 @@ export async function removeDeviceFromProject(deviceId: string) {
 
     await prisma.device.update({
       where: { id: deviceId },
-      data: { projectId: null, player: { disconnect: true } }, // Also disconnect from player
+      data: { projectId: null, assignedPlayerId: null },
     })
     revalidatePath('/control')
     return { success: true }
