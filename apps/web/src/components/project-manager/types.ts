@@ -1,3 +1,9 @@
+// Import Prisma modelov (sú vždy synchronizované so schema.prisma)
+
+// C:\Users\dado7\Desktop\RayZ\web\apps\web\src\components\project-manager\types.ts
+// C:\Users\dado7\Desktop\RayZ\web\packages\database\src\generated\client
+
+// WebSocket runtime typy
 import type {
   ConnectionState,
   DeviceRole,
@@ -6,53 +12,57 @@ import type {
   GameMode as WSGameMode,
 } from '@/lib/websocket/types'
 
-// Player ID is 8-bit (0-255), default 10
-// This ID is sent via laser for hit detection
+import {
+  Device as PrismaDevice,
+  GameMode as PrismaGameMode,
+  Player as PrismaPlayer,
+  Project as PrismaProject,
+  Team as PrismaTeam,
+} from '../../../../../packages/database/src/generated/client'
+
+// Player ID constants
 export const DEFAULT_PLAYER_ID = 10
 export const MIN_PLAYER_ID = 0
 export const MAX_PLAYER_ID = 255
 
-export type Project = {
-  id: string
-  name: string
-  description?: string
-  gameModeId?: string
-  gameMode?: GameMode
-  duration?: number
+/**
+ * Project with relations
+ * Prisma štandardne negeneruje vzťahy v hlavnom type, preto ich pridávame manuálne.
+ */
+export type Project = PrismaProject & {
   devices: Device[]
-  teams: Team[]
   players: Player[]
+  teams: Team[]
+  gameMode?: GameMode
 }
 
-export type Team = {
-  id: string
-  name: string
-  color: string
-  projectId: string
+/**
+ * Team type (pure Prisma)
+ */
+export type Team = PrismaTeam
+
+/**
+ * Player type + optional relations
+ */
+export type Player = PrismaPlayer & {
+  devices?: Device[] // optional, závisí od query (include)
 }
 
-export type Player = {
-  id: string
-  name: string
-  playerId: number // 8-bit ID (0-255) for laser identification
-  teamId?: string
-  devices?: Device[] // Assigned devices (optional depending on query)
-  projectId: string
+/**
+ * Device type + runtime WebSocket fields
+ * DB polia sú z PrismaDevice, ale dopĺňame polia, ktoré existujú len počas behu.
+ */
+export type Device = PrismaDevice & {
+  role?: DeviceRole // runtime (nie v DB)
+  state?: DeviceState // runtime
+  connectionState?: ConnectionState // runtime
 }
 
-export type Device = {
-  id: string
-  name?: string
-  ipAddress: string
-  role?: DeviceRole
-  projectId?: string
-  assignedPlayerId?: string | null
-}
+/**
+ * GameMode (priamo z DB)
+ * Ak chceš doplniť runtime stav, môžeš pridať polia sem.
+ */
+export type GameMode = PrismaGameMode
 
-export type GameMode = {
-  id: string
-  name: string
-}
-
-// Re-export WebSocket types for convenience
+// Re-export WebSocket types for pohodlie
 export type { ConnectionState, DeviceRole, DeviceState, GameState, WSGameMode }
