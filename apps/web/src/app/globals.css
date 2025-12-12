@@ -127,7 +127,24 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  /* Zruš všetky “scroll lock” offsety, ktoré Radix / react-remove-scroll pridáva */
+  body[data-radix-scroll-lock],
+  html[data-radix-scroll-lock],
+  body[data-scroll-locked],
+  html[data-scroll-locked] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    --removed-body-scroll-bar-size: 0px !important;
   }
 }
