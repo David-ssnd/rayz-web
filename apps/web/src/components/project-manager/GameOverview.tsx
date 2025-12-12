@@ -129,7 +129,7 @@ export function GameOverview({ project }: GameOverviewProps) {
     return (
       <div
         key={player.id}
-        className="flex flex-col sm:flex-row sm:items-center gap-1 p-1 rounded-md bg-background border"
+        className="flex flex-col sm:flex-row sm:items-center gap-1 p-1 rounded-md bg-background"
       >
         <div className="flex items-center gap-2 min-w-0">
           <Gamepad2 className="w-4 h-4 shrink-0" style={{ color: teamColor }} />
@@ -158,7 +158,7 @@ export function GameOverview({ project }: GameOverviewProps) {
     )
 
     return (
-      <div key={team.id} className="overflow-hidden border rounded">
+      <div key={team.id} className="overflow-hidden rounded">
         {/* Table-like header row */}
         <div
           role="button"
@@ -194,12 +194,15 @@ export function GameOverview({ project }: GameOverviewProps) {
         {/* Expandable file-structure style content */}
         {isExpanded && (
           <div className="px-3 pb-3 pt-2">
-            <div className="border-l ml-3 pl-3">
+            <div className="ml-3 pl-3">
               {players.length > 0 ? (
                 players.map((p) => (
                   <div key={p.id} className="mb-2">
                     <div className="flex items-center gap-2">
-                      <Gamepad2 className="w-4 h-4 text-muted-foreground" />
+                      <Gamepad2
+                        className="w-4 h-4 text-muted-foreground"
+                        style={{ color: team.color }}
+                      />
                       <div className="font-medium">{p.name}</div>
                       <Badge variant="outline" className="text-xs ml-2">
                         ID: {p.playerId}
@@ -215,7 +218,7 @@ export function GameOverview({ project }: GameOverviewProps) {
                               {getDeviceConnectionState(d.ipAddress) === 'connected' ? (
                                 <Wifi className="w-3 h-3 text-green-500" />
                               ) : (
-                                <WifiOff className="w-3 h-3 text-muted-foreground" />
+                                <WifiOff className="w-3 h-3 text-red-300" />
                               )}
                               <Monitor className="w-3 h-3" />
                               <span className="truncate">{d.name || d.ipAddress}</span>
@@ -245,7 +248,7 @@ export function GameOverview({ project }: GameOverviewProps) {
   return (
     <div className="space-y-4">
       {/* Game Control Section */}
-      <Card className="border-2 border-primary/20">
+      <Card className="border-0">
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
@@ -343,7 +346,7 @@ export function GameOverview({ project }: GameOverviewProps) {
 
           {/* Live Stats */}
           {isGameRunning && (
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+            <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">{totalKills}</p>
                 <p className="text-xs text-muted-foreground">Total Kills</p>
@@ -364,7 +367,7 @@ export function GameOverview({ project }: GameOverviewProps) {
             <Users className="w-5 h-5" />
             Teams
           </h3>
-          <div className="grid gap-3 grid-cols-2">{project.teams.map(renderTeam)}</div>
+          <div className="grid gap-3 grid-cols-">{project.teams.map(renderTeam)}</div>
         </div>
       )}
 
