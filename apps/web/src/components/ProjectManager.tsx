@@ -1,8 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { createProject, deleteProject } from '@/features/projects/actions'
-import { Gamepad2, LayoutDashboard, Monitor, Plus, Settings, Users } from 'lucide-react'
+import {
+  ChevronDown,
+  Gamepad2,
+  LayoutDashboard,
+  Monitor,
+  Plus,
+  Settings,
+  Users,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { DeviceConnectionsProvider } from '@/lib/websocket'
@@ -29,8 +37,15 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null)
   const [isPending, startTransition] = useTransition()
   const [newProjectName, setNewProjectName] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId)
+  const [localProjects, setLocalProjects] = useState<Project[]>(projects)
+
+  useEffect(() => {
+    setLocalProjects(projects)
+  }, [projects])
+
+  const selectedProject = localProjects.find((p) => p.id === selectedProjectId)
 
   const handleCreateProject = () => {
     if (!newProjectName) return
@@ -38,7 +53,10 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
       const res = await createProject(newProjectName)
       if (res.success) {
         setNewProjectName('')
-        setSelectedProjectId(res.project.id)
+        const created = { ...(res.project as any), devices: [], players: [], teams: [] } as Project
+        setLocalProjects((prev) => [...prev, created])
+        setSelectedProjectId(created.id)
+        setMenuOpen(false)
       }
     })
   }
@@ -47,53 +65,25 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
     if (!confirm('Are you sure?')) return
     startTransition(async () => {
       await deleteProject(id)
+      setLocalProjects((prev) => prev.filter((p) => p.id !== id))
       if (selectedProjectId === id) setSelectedProjectId(null)
     })
   }
 
-  if (!selectedProject && projects.length > 0) {
-    setSelectedProjectId(projects[0].id)
-  }
+  useEffect(() => {
+    if (!selectedProject && localProjects.length > 0) {
+      setSelectedProjectId(localProjects[0].id)
+    }
+  }, [localProjects, selectedProject])
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <h2 className="text-2xl font-bold">Projects</h2>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* Project Sidebar - Fixed width */}
-        <div className="w-full md:w-64 md:min-w-64 md:max-w-64 flex flex-col gap-2">
-          {projects.map((project) => (
-            <Button
-              key={project.id}
-              variant={selectedProjectId === project.id ? 'default' : 'outline'}
-              className="justify-start"
-              onClick={() => setSelectedProjectId(project.id)}
-            >
-              {project.name}
-            </Button>
-          ))}
-
-          <div className="flex gap-2 mt-2 pt-2 border-t">
-            <Input
-              placeholder="New Project"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              size="icon"
-              onClick={handleCreateProject}
-              disabled={isPending || !newProjectName}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="flex flex-col gap-4">
+        {/* Left column spacer (selector moved to card header) */}
+        <div className="w-full md:w-64 md:min-w-64 md:max-w-64 flex flex-col gap-2" />
 
         <div className="flex-1">
-          {projects.length === 0 ? (
+          {localProjects.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center text-muted-foreground">
                 No projects found. Create one to get started.
@@ -110,10 +100,59 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                 <Card>
                   <CardHeader className="pb-2 sm:pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <CardTitle className="text-lg sm:text-xl">{selectedProject.name}</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm">
-                          {selectedProject.gameMode?.name || 'Standard'}
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          className="px-0 py-0 text-left text-lg sm:text-xl font-semibold flex items-center gap-2"
+                          onClick={() => setMenuOpen((v) => !v)}
+                        >
+                          <span>{selectedProject?.name || 'Select Project'}</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+
+                        {menuOpen && (
+                          <div className="absolute left-0 mt-2 bg-popover border rounded shadow-lg z-20 w-64">
+                            <div className="flex flex-col p-2 max-h-64 overflow-auto">
+                              {localProjects.map((project) => (
+                                <Button
+                                  key={project.id}
+                                  variant={selectedProjectId === project.id ? 'default' : 'ghost'}
+                                  className="justify-start w-full"
+                                  onClick={() => {
+                                    setSelectedProjectId(project.id)
+                                    setMenuOpen(false)
+                                  }}
+                                >
+                                  {project.name}
+                                </Button>
+                              ))}
+                              {localProjects.length === 0 && (
+                                <div className="p-2 text-sm text-muted-foreground">No projects</div>
+                              )}
+                            </div>
+
+                            <div className="flex gap-2 p-2 border-t">
+                              <Input
+                                placeholder="Add new..."
+                                value={newProjectName}
+                                onChange={(e) => setNewProjectName(e.target.value)}
+                                className="flex-1"
+                              />
+                              <Button
+                                size="icon"
+                                onClick={() => {
+                                  handleCreateProject()
+                                }}
+                                disabled={isPending || !newProjectName}
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <CardDescription className="text-xs sm:text-sm mt-1">
+                          {selectedProject?.gameMode?.name || 'Standard'}
                         </CardDescription>
                       </div>
                     </div>

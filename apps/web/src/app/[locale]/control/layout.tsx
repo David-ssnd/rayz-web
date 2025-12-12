@@ -62,6 +62,7 @@ export default async function LocaleLayout({
               <div className="w-full max-w-6xl gap-2 flex flex-col">
                 <CPNavigation />
                 <div>{children}</div>
+                <div className="h-[20vh]" /> {/* Spacer for bottom content */}
               </div>
             </main>
           </ThemeProvider>
