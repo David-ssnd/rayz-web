@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Link } from '@/i18n/routing'
-import { ExternalLink, LogOut, Menu, User } from 'lucide-react'
+import { Cpu, ExternalLink, LogOut, Menu, User } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 
@@ -39,11 +40,14 @@ export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = [
-    // { label: t('control'), href: '/control' },
+    { label: t('control'), href: '/control' },
     { label: t('presentation'), href: '/presentation' },
     { label: t('hardware'), href: '/hardware' },
     { label: t('techStack'), href: '/techstack' },
   ]
+  const pathname = usePathname()
+  // Extract locale from pathname (assumes /[locale]/... structure)
+  const locale = pathname?.split('/')[1] ? '/' + pathname.split('/')[1] : ''
 
   const externalItems = [
     { label: t('github'), href: 'https://github.com/David-ssnd/RayZ' },
@@ -64,13 +68,19 @@ export function Navigation() {
         <div className="flex items-center flex-1 lg:gap-0 md:gap-0">
           <NavigationMenu>
             <NavigationMenuList className="md:gap-0 lg:gap-1">
-              {navItems.map((item) => (
-                <NavigationMenuItem key={item.href}>
-                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                    <Link href={item.href}>{item.label}</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
+              {navItems.map((item) => {
+                const isActive = pathname === locale + item.href
+                return (
+                  <NavigationMenuItem key={item.href}>
+                    <NavigationMenuLink
+                      asChild
+                      className={navigationMenuTriggerStyle() + (isActive ? ' bg-accent' : '')}
+                    >
+                      <Link href={item.href}>{item.label}</Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                )
+              })}
               {externalItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
                   <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
@@ -83,11 +93,6 @@ export function Navigation() {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               ))}
-              <NavigationMenuItem>
-                <Button asChild variant="dashed" className="">
-                  <Link href="/control">{t('control')}</Link>
-                </Button>
-              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -147,16 +152,19 @@ export function Navigation() {
               <SheetTitle>Navigation Menu</SheetTitle>
             </VisuallyHidden>
             <div className="flex flex-col space-y-4 mt-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm font-medium hover:underline"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const isActive = pathname === locale + item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`text-sm font-medium hover:underline ${isActive ? 'border-l-4 border-primary pl-2' : ''}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
               <div className="border-t pt-4 space-y-2">
                 {externalItems.map((item) => (
                   <a
