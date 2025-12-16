@@ -87,7 +87,7 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
   }, [localProjects, selectedProject])
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 min-h-screen">
       {localProjects.length === 0 ? (
         <Card className="border-dashed border-3">
           <Empty>
@@ -136,66 +136,64 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
             autoReconnect={true}
           >
             <Card>
-              <CardHeader className="pb-2 sm:pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      className="px-0 py-0 text-left text-lg sm:text-xl font-semibold flex items-center gap-2"
-                      onClick={() => setMenuOpen((v) => !v)}
-                    >
-                      <span>{selectedProject?.name || 'Select Project'}</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
+              <div className="flex flex-start">
+                <CardHeader>
+                  <Button
+                    variant="ghost"
+                    className="px-0 py-0 text-left text-lg sm:text-xl font-semibold flex items-center gap-2"
+                    onClick={() => setMenuOpen((v) => !v)}
+                  >
+                    <span>{selectedProject?.name || 'Select Project'}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
 
-                    {menuOpen && (
-                      <div className="absolute left-0 mt-2 bg-popover border rounded shadow-lg z-20 w-64">
-                        <div className="flex flex-col p-2 max-h-64 overflow-auto">
-                          {localProjects.map((project) => (
-                            <Button
-                              key={project.id}
-                              variant={selectedProjectId === project.id ? 'default' : 'ghost'}
-                              className="justify-start w-full"
-                              onClick={() => {
-                                setSelectedProjectId(project.id)
-                                setMenuOpen(false)
-                              }}
-                            >
-                              {project.name}
-                            </Button>
-                          ))}
-                          {localProjects.length === 0 && (
-                            <div className="p-2 text-sm text-muted-foreground">No projects</div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 p-2 border-t">
-                          <Input
-                            placeholder="Add new..."
-                            value={newProjectName}
-                            onChange={(e) => setNewProjectName(e.target.value)}
-                            className="flex-1"
-                          />
+                  {menuOpen && (
+                    <div className="absolute left-0 mt-2 bg-popover border rounded shadow-lg z-20 w-64">
+                      <div className="flex flex-col p-2 max-h-64 overflow-auto">
+                        {localProjects.map((project) => (
                           <Button
-                            size="icon"
+                            key={project.id}
+                            variant={selectedProjectId === project.id ? 'default' : 'ghost'}
+                            className="justify-start w-full"
                             onClick={() => {
-                              handleCreateProject()
+                              setSelectedProjectId(project.id)
+                              setMenuOpen(false)
                             }}
-                            disabled={isPending || !newProjectName}
                           >
-                            <Plus className="w-4 h-4" />
+                            {project.name}
                           </Button>
-                        </div>
+                        ))}
+                        {localProjects.length === 0 && (
+                          <div className="p-2 text-sm text-muted-foreground">No projects</div>
+                        )}
                       </div>
-                    )}
 
-                    <CardDescription className="text-xs sm:text-sm mt-1">
-                      {selectedProject?.gameMode?.name || 'Standard'}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
+                      <div className="flex gap-2 p-2 border-t">
+                        <Input
+                          placeholder="Add new..."
+                          value={newProjectName}
+                          onChange={(e) => setNewProjectName(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          size="icon"
+                          onClick={() => {
+                            handleCreateProject()
+                          }}
+                          disabled={isPending || !newProjectName}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <CardDescription className="text-xs sm:text-sm mt-1 pl-3">
+                    {selectedProject?.gameMode?.name || 'Standard'}
+                  </CardDescription>
+                </CardHeader>
+              </div>
+              <CardContent>
                 <Tabs defaultValue="overview">
                   <TabsList className="w-full sm:w-auto justify-start">
                     <TabsTrigger value="overview" className="group flex-1 sm:flex-none">

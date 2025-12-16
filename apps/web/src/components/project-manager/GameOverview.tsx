@@ -163,7 +163,7 @@ export function GameOverview({ project }: GameOverviewProps) {
         <div
           role="button"
           onClick={() => toggleTeam(team.id)}
-          className="flex items-center gap-2 px-3 py-2 cursor-pointer bg-muted/5 hover:bg-muted/10"
+          className="flex items-center gap-2 px-3 py-2 hover:bg-accent/20"
         >
           <div className="flex items-center gap-2 w-1/2">
             {isExpanded ? (
@@ -248,8 +248,8 @@ export function GameOverview({ project }: GameOverviewProps) {
   return (
     <div className="space-y-4">
       {/* Game Control Section */}
-      <Card className="border-0">
-        <CardHeader className="pb-2">
+      <Card className="border-0 gap-2">
+        <CardHeader className="pb-2 px-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
               <Activity className="w-5 h-5" />
@@ -269,7 +269,7 @@ export function GameOverview({ project }: GameOverviewProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 px-0">
           {/* Game Mode Selection */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Select
@@ -367,7 +367,7 @@ export function GameOverview({ project }: GameOverviewProps) {
             <Users className="w-5 h-5" />
             Teams
           </h3>
-          <div className="grid gap-3 grid-cols-">{project.teams.map(renderTeam)}</div>
+          <div>{project.teams.map(renderTeam)}</div>
         </div>
       )}
 
@@ -378,11 +378,9 @@ export function GameOverview({ project }: GameOverviewProps) {
             <Gamepad2 className="w-5 h-5" />
             Players without Team
           </h3>
-          <Card>
-            <CardContent className="pt-2 space-y-2">
-              {playersWithoutTeam.map((p) => renderPlayer(p))}
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-3 px-3">
+            {playersWithoutTeam.map((p) => renderPlayer(p))}
+          </div>
         </div>
       )}
 
