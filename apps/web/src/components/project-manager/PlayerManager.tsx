@@ -8,8 +8,9 @@ import {
   updatePlayerDevices,
   updatePlayerTeam,
 } from '@/features/projects/actions'
-import { Edit2, Monitor, Plus, Trash2, X } from 'lucide-react'
+import { AlertCircle, Edit2, Monitor, Plus, Trash2, X } from 'lucide-react'
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,11 +34,33 @@ import {
 
 export function PlayerManager({ project, devices }: { project: Project; devices: Device[] }) {
   const [name, setName] = useState('')
-  const [playerId, setPlayerId] = useState(DEFAULT_PLAYER_ID)
+  // Allow string temporarily to prevent input jumping, parse on submit
+  const [playerNumberStr, setPlayerNumberStr] = useState(String(DEFAULT_PLAYER_ID))
+
   const [isPending, startTransition] = useTransition()
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editNumericId, setEditNumericId] = useState(DEFAULT_PLAYER_ID)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const players = project.players || []
+  const trimmedName = name.trim()
+  const currentPlayerId = parseInt(playerNumberStr) || 0
+  const isDuplicateId = players.some((p) => p.number === currentPlayerId)
+  const isDuplicateName =
+    trimmedName.length > 0 &&
+    players.some((p) => p.name.trim().toLowerCase() === trimmedName.toLowerCase())
+
+  const handleActionResult = (result: { error?: string } | void) => {
+    const message =
+      result && typeof result === 'object' && 'error' in result ? result.error : null
+    if (message) {
+      setErrorMessage(message)
+      return false
+    }
+    setErrorMessage(null)
+    return true
+  }
 
   // Get devices assigned to a specific player
   const getPlayerDevices = (player: Player): Device[] => {
@@ -50,67 +73,76 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
   }
 
   const handleAdd = () => {
-    if (!name) return
+    if (!trimmedName || isDuplicateId || isDuplicateName) return
+
     startTransition(async () => {
-      await addPlayer(project.id, name, playerId)
+      const result = await addPlayer(project.id, trimmedName, currentPlayerId)
+      if (!handleActionResult(result)) return
       setName('')
-      setPlayerId(DEFAULT_PLAYER_ID)
+      setPlayerNumberStr(String(DEFAULT_PLAYER_ID))
     })
   }
 
   const startEditing = (player: Player) => {
     setEditingPlayerId(player.id)
     setEditName(player.name)
-    setEditNumericId(player.playerId || DEFAULT_PLAYER_ID)
+    setEditNumericId(player.number)
   }
 
   const saveEdit = () => {
     if (!editingPlayerId || !editName) return
     startTransition(async () => {
-      await updatePlayer(editingPlayerId, { name: editName, playerId: editNumericId })
+      const result = await updatePlayer(editingPlayerId, {
+        name: editName,
+        playerId: editNumericId,
+      })
+      if (!handleActionResult(result)) return
       setEditingPlayerId(null)
     })
   }
 
   const handleTeamChange = (playerId: string, teamId: string) => {
     startTransition(async () => {
-      await updatePlayerTeam(playerId, teamId === 'none' ? null : teamId)
+      const result = await updatePlayerTeam(playerId, teamId === 'none' ? null : teamId)
+      handleActionResult(result)
     })
   }
 
   const handleAddDevice = (playerId: string, deviceId: string) => {
-    const player = project.players?.find((p: Player) => p.id === playerId)
+    const player = players.find((p: Player) => p.id === playerId)
     if (!player) return
 
     const currentDeviceIds = getPlayerDevices(player).map((d) => d.id)
     if (currentDeviceIds.includes(deviceId)) return
 
     startTransition(async () => {
-      await updatePlayerDevices(playerId, [...currentDeviceIds, deviceId])
+      const result = await updatePlayerDevices(playerId, [...currentDeviceIds, deviceId])
+      handleActionResult(result)
     })
   }
 
   const handleRemoveDevice = (playerId: string, deviceId: string) => {
-    const player = project.players?.find((p: Player) => p.id === playerId)
+    const player = players.find((p: Player) => p.id === playerId)
     if (!player) return
 
     const newDeviceIds = getPlayerDevices(player)
       .map((d) => d.id)
       .filter((id: string) => id !== deviceId)
     startTransition(async () => {
-      await updatePlayerDevices(playerId, newDeviceIds)
+      const result = await updatePlayerDevices(playerId, newDeviceIds)
+      handleActionResult(result)
     })
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
       {/* Add Player Form */}
       <div className="flex flex-col sm:flex-row gap-2">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Player Name"
-          className="flex-1"
+          className={`flex-1 ${isDuplicateName ? 'border-destructive text-destructive' : ''}`}
         />
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground whitespace-nowrap">ID:</label>
@@ -118,26 +150,22 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
             type="number"
             min={MIN_PLAYER_ID}
             max={MAX_PLAYER_ID}
-            value={playerId}
-            onChange={(e) =>
-              setPlayerId(
-                Math.min(
-                  MAX_PLAYER_ID,
-                  Math.max(MIN_PLAYER_ID, parseInt(e.target.value) || DEFAULT_PLAYER_ID)
-                )
-              )
-            }
-            className="w-20"
+            value={playerNumberStr}
+            onChange={(e) => setPlayerNumberStr(e.target.value)}
+            className={`w-20 ${isDuplicateId ? 'border-destructive text-destructive' : ''}`}
           />
         </div>
-        <Button onClick={handleAdd} disabled={isPending || !name}>
+        <Button
+          onClick={handleAdd}
+          disabled={isPending || !trimmedName || isDuplicateId || isDuplicateName}
+        >
           Add Player
         </Button>
       </div>
 
       {/* Players List */}
       <div className="grid gap-3">
-        {project.players?.map((player: Player) => {
+        {players.map((player: Player) => {
           const playerDevices = getPlayerDevices(player)
           const availableDevices = getAvailableDevices()
           const playerTeam = project.teams?.find((t: Team) => t.id === player.teamId)
@@ -168,14 +196,7 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
                         min={MIN_PLAYER_ID}
                         max={MAX_PLAYER_ID}
                         value={editNumericId}
-                        onChange={(e) =>
-                          setEditNumericId(
-                            Math.min(
-                              MAX_PLAYER_ID,
-                              Math.max(MIN_PLAYER_ID, parseInt(e.target.value) || DEFAULT_PLAYER_ID)
-                            )
-                          )
-                        }
+                        onChange={(e) => setEditNumericId(parseInt(e.target.value) || 0)}
                         className="w-16 h-8"
                       />
                     </div>
@@ -190,7 +211,7 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{player.name}</span>
                     <Badge variant="outline" className="text-xs">
-                      ID: {player.playerId ?? DEFAULT_PLAYER_ID}
+                      ID: {player.number ?? DEFAULT_PLAYER_ID}
                     </Badge>
                     <Button
                       variant="ghost"
@@ -204,7 +225,6 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
                 )}
 
                 <div className="flex items-center gap-2">
-                  {/* Team Select */}
                   <Select
                     value={player.teamId || 'none'}
                     onValueChange={(val) => handleTeamChange(player.id, val)}
@@ -234,7 +254,8 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
                     className="h-8 w-8 p-0"
                     onClick={() =>
                       startTransition(async () => {
-                        await removePlayer(player.id)
+                        const result = await removePlayer(player.id)
+                        handleActionResult(result)
                       })
                     }
                   >
@@ -261,7 +282,6 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
                   </Badge>
                 ))}
 
-                {/* Add Device Dropdown */}
                 {availableDevices.length > 0 && (
                   <Select value="" onValueChange={(val) => handleAddDevice(player.id, val)}>
                     <SelectTrigger className="w-auto h-7 gap-1 text-xs">
@@ -289,12 +309,26 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
           )
         })}
 
-        {(!project.players || project.players.length === 0) && (
+        {players.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-4">
             No players added yet.
           </div>
         )}
       </div>
+
+      {/* Fixed Position Alert */}
+      {errorMessage && (
+        <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm animate-in slide-in-from-bottom-5 fade-in-0">
+          <Alert
+            variant="destructive"
+            className="bg-destructive/10 border-destructive/20 shadow-lg backdrop-blur-sm"
+          >
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="block">{errorMessage}</AlertDescription>
+          </Alert>
+        </div>
+      )}
     </div>
   )
 }

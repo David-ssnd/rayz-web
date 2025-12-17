@@ -1,50 +1,113 @@
-// WebSocket Protocol Types for ESP32 Device Communication
+// WebSocket Protocol Types — Matches ESP32 Firmware Protocol v2.2
 
-// ============= Game Modes =============
-export type GameMode = 'free' | 'deathmatch' | 'team' | 'capture_flag' | 'timed'
+// ============= Enums & Constants =============
 
-// ============= Game States =============
-export type GameState = 'idle' | 'countdown' | 'playing' | 'respawning' | 'ended'
+export enum OpCode {
+  // Client -> ESP32
+  GET_STATUS = 1,
+  HEARTBEAT = 2,
+  CONFIG_UPDATE = 3,
+  GAME_COMMAND = 4,
+  HIT_FORWARD = 5,
+  KILL_CONFIRMED = 6,
+  REMOTE_SOUND = 7,
 
-// ============= Device Roles =============
-export type DeviceRole = 'weapon' | 'target'
+  // ESP32 -> Client
+  STATUS = 10,
+  HEARTBEAT_ACK = 11,
+  SHOT_FIRED = 12,
+  HIT_REPORT = 13,
+  RESPAWN = 14,
+  RELOAD_EVENT = 15,
+  GAME_OVER = 16,
+  ACK = 20,
+}
 
-// ============= Connection States =============
+export enum GameCommandType {
+  STOP = 0,
+  START = 1,
+  RESET = 2,
+  PAUSE = 3,
+  UNPAUSE = 4,
+}
+
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 // ============= Messages: Browser → ESP32 =============
 
-export interface GetStatusMessage {
+export interface BaseClientMessage {
+  op: OpCode
+  type: string
+  req_id?: string // Optional UUID for tracking acknowledgments
+}
+
+export interface GetStatusMessage extends BaseClientMessage {
+  op: OpCode.GET_STATUS
   type: 'get_status'
 }
 
-export interface HeartbeatMessage {
+export interface HeartbeatMessage extends BaseClientMessage {
+  op: OpCode.HEARTBEAT
   type: 'heartbeat'
 }
 
-export interface ConfigUpdateMessage {
+export interface ConfigUpdateMessage extends BaseClientMessage {
+  op: OpCode.CONFIG_UPDATE
   type: 'config_update'
-  device_name?: string
-  player_id?: number // 8-bit ID (0-255), default 10
-  team?: string
-  color?: string
-  teammates?: number[] // array of 8-bit player IDs
-  enemies?: number[] // array of 8-bit player IDs
+
+  reset_to_defaults?: boolean
+
+  // Identity
+  device_id?: number
+  player_id?: number
+  team_id?: number // 0=Solo, 255=Admin, 1..N=Teams
+
+  // Hardware / AV
+  color_rgb?: number
+  ir_power?: number // 0=Indoor, 1=Outdoor
+  volume?: number // 0-100
+  sound_profile?: number
+  haptic_enabled?: boolean
+
+  // Rules & Mechanics (Health)
+  enable_hearts?: boolean // If false, player is immortal/health hidden
+  spawn_hearts?: number
+  max_hearts?: number
+  respawn_time_s?: number
+  damage_in?: number
+  damage_out?: number
+  friendly_fire?: boolean
+
+  // Rules & Mechanics (Ammo)
+  enable_ammo?: boolean // If false, infinite shots, no reload needed
+  max_ammo?: number
+  reload_time_ms?: number
+
+  // Game Timer
+  game_duration_s?: number // 0 = Manual Stop only
 }
 
-export interface GameCommandMessage {
+export interface GameCommandMessage extends BaseClientMessage {
+  op: OpCode.GAME_COMMAND
   type: 'game_command'
-  command: 'start' | 'stop' | 'reset'
-  gamemode?: GameMode
+  command: GameCommandType
 }
 
-export interface HitForwardMessage {
+export interface HitForwardMessage extends BaseClientMessage {
+  op: OpCode.HIT_FORWARD
   type: 'hit_forward'
-  shooter_id: string
+  shooter_id: number
 }
 
-export interface KillConfirmedMessage {
+export interface KillConfirmedMessage extends BaseClientMessage {
+  op: OpCode.KILL_CONFIRMED
   type: 'kill_confirmed'
+}
+
+export interface RemoteSoundMessage extends BaseClientMessage {
+  op: OpCode.REMOTE_SOUND
+  type: 'remote_sound'
+  sound_id: number // 0=Whistle, 1=Horn, etc.
 }
 
 export type ClientMessage =
@@ -54,60 +117,105 @@ export type ClientMessage =
   | GameCommandMessage
   | HitForwardMessage
   | KillConfirmedMessage
+  | RemoteSoundMessage
 
 // ============= Messages: ESP32 → Browser =============
 
-export interface DeviceStatusMessage {
-  type: 'status'
-  device_id: string
-  device_name: string
-  player_id: number // 8-bit ID (0-255)
-  role: DeviceRole
-  team: string
-  color: string
-  ip: string
-  gamemode: GameMode
-  game_state: GameState
-  kills: number
-  deaths: number
+// Sub-interfaces for the nested Status object
+export interface DeviceConfigStatus {
+  device_id: number
+  player_id: number
+  team_id: number
+  color_rgb: number
+
+  // Health
+  enable_hearts: boolean
+  max_hearts: number
+  spawn_hearts: number
+
+  // Ammo
+  enable_ammo: boolean
+  max_ammo: number
+
+  // General
+  game_duration_s: number
+  friendly_fire: boolean
+}
+
+export interface DeviceLiveStats {
   shots: number
-  hits: number
-  health: number
+  enemy_kills: number
+  friendly_kills: number
+  deaths: number
+  hits_received?: number
+}
+
+export interface DeviceLiveState {
+  current_hearts: number
+  current_ammo: number
+  is_respawning: boolean
+  is_reloading: boolean
+  remaining_time_s?: number // Only if game timer is active
+}
+
+export interface DeviceStatusMessage {
+  op: OpCode.STATUS
+  type: 'status'
+  uptime_ms: number
+
+  // v2.2 Protocol nests these
+  config: DeviceConfigStatus
+  stats: DeviceLiveStats
+  state: DeviceLiveState
 }
 
 export interface HeartbeatAckMessage {
+  op: OpCode.HEARTBEAT_ACK
   type: 'heartbeat_ack'
-  kills: number
-  deaths: number
-  health: number
-  game_state: GameState
+  batt_voltage?: number
+  rssi?: number // Signal strength
 }
 
 export interface ShotFiredMessage {
+  op: OpCode.SHOT_FIRED
   type: 'shot_fired'
-  device_id: string
-  shots: number
-  timestamp: number
+  timestamp_ms: number
+  seq_id: number
 }
 
 export interface HitReportMessage {
+  op: OpCode.HIT_REPORT
   type: 'hit_report'
-  target_id: string
-  shooter_id: string
-  timestamp: number
+  timestamp_ms: number
+  seq_id: number
+  shooter_id: number
+  damage: number
+  fatal: boolean // Did this hit cause death?
 }
 
 export interface RespawnMessage {
+  op: OpCode.RESPAWN
   type: 'respawn'
-  device_id: string
-  state: GameState
-  respawn_time_ms: number
+  timestamp_ms: number
+  current_hearts?: number // Optional sync
 }
 
-export interface GameStateChangeMessage {
-  type: 'game_state_change'
-  game_state: GameState
-  gamemode: GameMode
+export interface ReloadMessage {
+  op: OpCode.RELOAD_EVENT
+  type: 'reload_event'
+  current_ammo: number
+}
+
+export interface GameOverMessage {
+  op: OpCode.GAME_OVER
+  type: 'game_over'
+}
+
+export interface AckMessage {
+  op: OpCode.ACK
+  type: 'ack'
+  reply_to?: string // matches req_id
+  success: boolean
 }
 
 export type ServerMessage =
@@ -116,45 +224,71 @@ export type ServerMessage =
   | ShotFiredMessage
   | HitReportMessage
   | RespawnMessage
-  | GameStateChangeMessage
+  | ReloadMessage
+  | GameOverMessage
+  | AckMessage
 
-// ============= Device State (for UI) =============
+// ============= Device State (for UI Store) =============
 
 export interface DeviceState {
-  // Connection info
+  // Connection Metadata
   ipAddress: string
   connectionState: ConnectionState
   lastConnected?: Date
   lastError?: string
+  lastHeartbeat?: Date
+  lastStatusUpdate?: Date
+  rssi?: number
+  batteryVoltage?: number
 
-  // Device info (from status message)
-  deviceId?: string
-  deviceName?: string
-  playerId?: number // 8-bit ID (0-255), default 10
-  role?: DeviceRole
-  team?: string
-  color?: string
+  // Identity & Config
+  deviceId: number
+  playerId: number
+  teamId: number
+  colorRgb: number
 
-  // Game state
-  gamemode?: GameMode
-  gameState?: GameState
+  // Mechanics Config
+  enableHearts: boolean
+  maxHearts: number
+  enableAmmo: boolean
+  maxAmmo: number
+
+  // Live Stats
   kills: number
   deaths: number
   shots: number
-  hits: number
-  health: number
 
-  // Timestamps
-  lastStatusUpdate?: Date
-  lastHeartbeat?: Date
+  // Live State
+  hearts: number
+  ammo: number
+  isRespawning: boolean
+  isReloading: boolean
+  gameRemainingTime?: number
 }
 
+// Initial state factory
 export const initialDeviceState = (ipAddress: string): DeviceState => ({
   ipAddress,
   connectionState: 'disconnected',
+
+  // Defaults
+  deviceId: 0,
+  playerId: 0,
+  teamId: 0,
+  colorRgb: 0xffffff,
+
+  // Mechanics Defaults
+  enableHearts: false,
+  maxHearts: 0,
+  enableAmmo: false,
+  maxAmmo: 0,
+
   kills: 0,
   deaths: 0,
   shots: 0,
-  hits: 0,
-  health: 100,
+
+  hearts: 0,
+  ammo: 0,
+  isRespawning: false,
+  isReloading: false,
 })
