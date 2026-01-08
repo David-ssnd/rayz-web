@@ -9,7 +9,6 @@ import {
   ConnectionState,
   DeviceState,
   DeviceStatusMessage,
-  GameCommandMessage,
   GameCommandType,
   GameOverMessage,
   HeartbeatAckMessage,
@@ -17,7 +16,6 @@ import {
   initialDeviceState,
   OpCode,
   ReloadMessage,
-  RemoteSoundMessage,
   RespawnMessage,
   ServerMessage,
   ShotFiredMessage,
@@ -25,6 +23,7 @@ import {
 
 export interface UseDeviceWebSocketOptions {
   ipAddress: string
+  bridgeUrl?: string // Optional bridge URL
   autoConnect?: boolean
   autoReconnect?: boolean
   reconnectDelay?: number
@@ -41,13 +40,14 @@ export interface UseDeviceWebSocketOptions {
   onAck?: (ack: AckMessage) => void
   onMessage?: (message: ServerMessage) => void
   onConnectionChange?: (state: ConnectionState) => void
-  onError?: (error: Event) => void
+  onError?: (error: Event | string) => void
 }
 
 export interface UseDeviceWebSocketReturn {
   state: DeviceState
   connectionState: ConnectionState
   isConnected: boolean
+  url: string | undefined
 
   // Connection
   connect: () => void
@@ -69,6 +69,7 @@ export interface UseDeviceWebSocketReturn {
 export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDeviceWebSocketReturn {
   const {
     ipAddress,
+    bridgeUrl = process.env.NEXT_PUBLIC_WS_BRIDGE_URL,
     autoConnect = true,
     autoReconnect = true,
     reconnectDelay = 3000,
@@ -88,12 +89,14 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
 
   const [state, setState] = useState<DeviceState>(() => initialDeviceState(ipAddress))
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
+  const [activeUrl, setActiveUrl] = useState<string | undefined>()
 
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shouldReconnectRef = useRef(autoReconnect)
+  const attemptRef = useRef(0)
   const mountedRef = useRef(true)
 
   const updateConnectionState = useCallback(
@@ -274,10 +277,23 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
     clearTimeouts()
     updateConnectionState('connecting')
 
-    // Choose protocol based on page context to avoid mixed content errors
+    // Determine correct URL based on environment (HTTPS/HTTP)
+    let url = ''
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
-    const protocol = isHttps ? 'wss' : 'ws'
-    const url = `${protocol}://${ipAddress}/ws`
+
+    if (isHttps) {
+      if (bridgeUrl) {
+        url = `${bridgeUrl}?target=${encodeURIComponent(ipAddress)}`
+      } else {
+        // Fallback or error if bridge missing
+        console.warn('[WS] HTTPS detected but no bridge URL provided. Falls back to WSS (requires valid cert on device).')
+        url = `wss://${ipAddress}/ws`
+      }
+    } else {
+      url = `ws://${ipAddress}/ws`
+    }
+    
+    setActiveUrl(url)
 
     try {
       const ws = new WebSocket(url)
@@ -290,6 +306,7 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
       ws.onopen = () => {
         if (!mountedRef.current) return
         clearTimeout(connectionTimeoutRef.current!)
+        attemptRef.current = 0 // Reset attempts on success
         updateConnectionState('connected')
 
         setState((prev) => ({
@@ -313,15 +330,16 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         // Provide helpful hint when on HTTPS and using ws:// (should not happen now), or WSS handshake fails
         let msg = 'WebSocket error'
         if (typeof window !== 'undefined') {
-          const pageHttps = window.location.protocol === 'https:'
-          if (pageHttps && url.startsWith('ws://'))
+          if (isHttps && url.startsWith('ws://'))
             msg += ' (blocked insecure ws:// from HTTPS page)'
-          if (pageHttps && url.startsWith('wss://'))
-            msg += ' (WSS handshake failed — device likely lacks TLS)'
+          if (isHttps && url.startsWith('wss://'))
+            msg += ' (WSS handshake failed — device likely lacks TLS or cert invalid)'
+          if (isHttps && url.includes('bridge') && !bridgeUrl)
+             msg += ' (Bridge URL config missing)'
         }
         setState((prev) => ({ ...prev, connectionState: 'error', lastError: msg }))
         updateConnectionState('error')
-        onError?.(e)
+        onError?.(msg)
       }
 
       ws.onclose = () => {
@@ -340,9 +358,14 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         lastError: `Failed to create connection: ${msg}`,
       }))
       updateConnectionState('error')
+
+       if (shouldReconnectRef.current && autoReconnect) {
+          reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
+        }
     }
   }, [
     ipAddress,
+    bridgeUrl,
     autoReconnect,
     reconnectDelay,
     heartbeatInterval,

@@ -49,7 +49,7 @@ export function DeviceConnectionCard({
 
   const isAssigned = !!assignedPlayer
 
-  const { state, connectionState, isConnected, connect, disconnect, getStatus, updateConfig } =
+  const { state, connectionState, isConnected, connect, disconnect, getStatus, updateConfig, url } =
     useDeviceWebSocket({
       ipAddress,
       autoConnect: true,
@@ -288,7 +288,14 @@ export function DeviceConnectionCard({
           </p>
         )}
 
-        {state.lastError && <p className="text-xs text-destructive truncate">{state.lastError}</p>}
+        <div className="text-[10px] text-muted-foreground truncate" title={url}>
+           {url && `Using: ${url}`}
+        </div>
+        {state.lastError && (
+          <div className="text-xs text-destructive break-words bg-destructive/5 p-1 rounded">
+             {state.lastError}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
