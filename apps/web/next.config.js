@@ -10,7 +10,7 @@ const repoRoot = __dirname.replace(/apps[\\\/]web$/, '')
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const nextConfig = {
-  transpilePackages: ['@rayz/ui', '@rayz/types', '@rayz/database'],
+  transpilePackages: ['@rayz/types', '@rayz/database'],
   turbopack: {
     root: repoRoot,
   },

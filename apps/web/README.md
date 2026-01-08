@@ -20,7 +20,6 @@ pnpm start
 - Next.js 14+ with App Router
 - TypeScript
 - TailwindCSS
-- Shared UI components from `@rayz/ui`
 - Shared types from `@rayz/types`
 
 ## Authentication
