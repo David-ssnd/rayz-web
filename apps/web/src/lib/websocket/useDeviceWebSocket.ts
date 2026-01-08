@@ -248,7 +248,11 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         return true
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        setState((prev) => ({ ...prev, connectionState: 'error', lastError: `Send failed: ${msg}` }))
+        setState((prev) => ({
+          ...prev,
+          connectionState: 'error',
+          lastError: `Send failed: ${msg}`,
+        }))
         return false
       }
     }
@@ -278,57 +282,63 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
     try {
       const ws = new WebSocket(url)
       wsRef.current = ws
-  
+
       connectionTimeoutRef.current = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) ws.close()
       }, connectionTimeout)
-  
+
       ws.onopen = () => {
         if (!mountedRef.current) return
         clearTimeout(connectionTimeoutRef.current!)
         updateConnectionState('connected')
-  
+
         setState((prev) => ({
           ...prev,
           lastConnected: new Date(),
           lastError: undefined,
         }))
-  
+
         // Initial Status Fetch
         send({ op: OpCode.GET_STATUS, type: 'get_status' })
-  
+
         // Start Heartbeat Loop
         heartbeatIntervalRef.current = setInterval(() => {
           send({ op: OpCode.HEARTBEAT, type: 'heartbeat' })
         }, heartbeatInterval)
       }
-  
+
       ws.onmessage = handleMessage
-  
+
       ws.onerror = (e) => {
         // Provide helpful hint when on HTTPS and using ws:// (should not happen now), or WSS handshake fails
         let msg = 'WebSocket error'
         if (typeof window !== 'undefined') {
           const pageHttps = window.location.protocol === 'https:'
-          if (pageHttps && url.startsWith('ws://')) msg += ' (blocked insecure ws:// from HTTPS page)'
-          if (pageHttps && url.startsWith('wss://')) msg += ' (WSS handshake failed — device likely lacks TLS)'
+          if (pageHttps && url.startsWith('ws://'))
+            msg += ' (blocked insecure ws:// from HTTPS page)'
+          if (pageHttps && url.startsWith('wss://'))
+            msg += ' (WSS handshake failed — device likely lacks TLS)'
         }
         setState((prev) => ({ ...prev, connectionState: 'error', lastError: msg }))
         updateConnectionState('error')
         onError?.(e)
       }
-  
+
       ws.onclose = () => {
         clearTimeouts()
         updateConnectionState('disconnected')
-  
+
         if (shouldReconnectRef.current && autoReconnect) {
           reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
         }
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
-      setState((prev) => ({ ...prev, connectionState: 'error', lastError: `Failed to create connection: ${msg}` }))
+      setState((prev) => ({
+        ...prev,
+        connectionState: 'error',
+        lastError: `Failed to create connection: ${msg}`,
+      }))
       updateConnectionState('error')
     }
   }, [
