@@ -180,14 +180,30 @@ export function DeviceConnectionsProvider({
   }, [])
 
   // Send message to a device
-  const sendToDevice = useCallback((ip: string, message: ClientMessage): boolean => {
-    const ws = websocketsRef.current.get(ip)
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(message))
-      return true
-    }
-    return false
-  }, [])
+  const sendToDevice = useCallback(
+    (ip: string, message: ClientMessage): boolean => {
+      const ws = websocketsRef.current.get(ip)
+      if (ws?.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify(message))
+          return true
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          updateDeviceState(ip, {
+            connectionState: 'error',
+            lastError: `Send failed: ${msg}`,
+          })
+          return false
+        }
+      }
+      // Socket not open; surface this to UI so user understands the state
+      updateDeviceState(ip, {
+        lastError: 'Cannot send: socket not open',
+      })
+      return false
+    },
+    [updateDeviceState]
+  )
 
   // Handle incoming messages
   const handleMessage = useCallback(
@@ -295,12 +311,18 @@ export function DeviceConnectionsProvider({
 
         ws.onmessage = (event) => handleMessage(ip, event)
 
-        ws.onerror = (error) => {
-          // Treat connection problems as a normal offline state; avoid logging
-          // to prevent noisy console output during normal offline operation.
+        ws.onerror = () => {
+          // Browser hides detailed WS errors; add helpful hint for HTTPS mixed content
+          let msg = 'WebSocket error'
+          if (typeof window !== 'undefined') {
+            const isHttps = window.location.protocol === 'https:'
+            if (isHttps && typeof wsUrl === 'string' && wsUrl.startsWith('ws://')) {
+              msg += ' (blocked insecure ws:// from HTTPS page)'
+            }
+          }
           updateDeviceState(ip, {
             connectionState: 'error',
-            lastError: 'Connection error',
+            lastError: msg,
           })
         }
 
@@ -322,9 +344,10 @@ export function DeviceConnectionsProvider({
           }
         }
       } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
         updateDeviceState(ip, {
           connectionState: 'error',
-          lastError: 'Failed to create connection',
+          lastError: `Failed to create connection: ${msg}`,
         })
       }
     },
