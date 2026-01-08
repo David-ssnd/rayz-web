@@ -106,10 +106,23 @@ export async function addTeam(projectId: string, name: string, color: string) {
     })
     if (!project) return { error: 'Project not found' }
 
+    // Assign the lowest available team number between 1-255 within the project
+    const existingTeams = await prisma.team.findMany({
+      where: { projectId },
+      select: { number: true },
+    })
+    const usedNumbers = new Set(existingTeams.map((t) => t.number))
+    let nextNumber = 1
+    while (nextNumber <= 255 && usedNumbers.has(nextNumber)) {
+      nextNumber++
+    }
+    if (nextNumber > 255) return { error: 'Maximum teams reached' }
+
     const team = await prisma.team.create({
       data: {
         name,
         color,
+        number: nextNumber,
         projectId,
       },
     })
@@ -164,7 +177,7 @@ export async function removeTeam(teamId: string) {
 
 // --- Players ---
 
-export async function addPlayer(projectId: string, name: string, playerId?: number) {
+export async function addPlayer(projectId: string, name: string, playerNumber: number) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
 
@@ -177,7 +190,7 @@ export async function addPlayer(projectId: string, name: string, playerId?: numb
     const player = await prisma.player.create({
       data: {
         name,
-        playerId: typeof playerId === 'number' ? playerId : undefined,
+        number: playerNumber,
         projectId,
       },
     })
@@ -188,7 +201,7 @@ export async function addPlayer(projectId: string, name: string, playerId?: numb
   }
 }
 
-export async function updatePlayer(playerId: string, data: { name?: string; playerId?: number }) {
+export async function updatePlayer(playerId: string, data: { name?: string; number?: number }) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
 

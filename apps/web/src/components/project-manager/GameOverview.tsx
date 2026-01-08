@@ -135,7 +135,7 @@ export function GameOverview({ project }: GameOverviewProps) {
           <Gamepad2 className="w-4 h-4 shrink-0" style={{ color: teamColor }} />
           <span className="font-medium truncate">{player.name}</span>
           <Badge variant="outline" className="text-xs shrink-0">
-            ID: {player.playerId}
+            ID: {player.number}
           </Badge>
         </div>
         <div className="flex flex-wrap gap-1 ml-0 sm:ml-auto">
@@ -205,7 +205,7 @@ export function GameOverview({ project }: GameOverviewProps) {
                       />
                       <div className="font-medium">{p.name}</div>
                       <Badge variant="outline" className="text-xs ml-2">
-                        ID: {p.playerId}
+                        ID: {p.number}
                       </Badge>
                     </div>
 

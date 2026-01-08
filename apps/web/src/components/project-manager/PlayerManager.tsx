@@ -94,7 +94,7 @@ export function PlayerManager({ project, devices }: { project: Project; devices:
     startTransition(async () => {
       const result = await updatePlayer(editingPlayerId, {
         name: editName,
-        playerId: editNumericId,
+        number: editNumericId,
       })
       if (!handleActionResult(result)) return
       setEditingPlayerId(null)
