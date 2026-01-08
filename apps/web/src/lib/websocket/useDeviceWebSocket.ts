@@ -286,13 +286,15 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         url = `${bridgeUrl}?target=${encodeURIComponent(ipAddress)}`
       } else {
         // Fallback or error if bridge missing
-        console.warn('[WS] HTTPS detected but no bridge URL provided. Falls back to WSS (requires valid cert on device).')
+        console.warn(
+          '[WS] HTTPS detected but no bridge URL provided. Falls back to WSS (requires valid cert on device).'
+        )
         url = `wss://${ipAddress}/ws`
       }
     } else {
       url = `ws://${ipAddress}/ws`
     }
-    
+
     setActiveUrl(url)
 
     try {
@@ -330,12 +332,10 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
         // Provide helpful hint when on HTTPS and using ws:// (should not happen now), or WSS handshake fails
         let msg = 'WebSocket error'
         if (typeof window !== 'undefined') {
-          if (isHttps && url.startsWith('ws://'))
-            msg += ' (blocked insecure ws:// from HTTPS page)'
+          if (isHttps && url.startsWith('ws://')) msg += ' (blocked insecure ws:// from HTTPS page)'
           if (isHttps && url.startsWith('wss://'))
             msg += ' (WSS handshake failed — device likely lacks TLS or cert invalid)'
-          if (isHttps && url.includes('bridge') && !bridgeUrl)
-             msg += ' (Bridge URL config missing)'
+          if (isHttps && url.includes('bridge') && !bridgeUrl) msg += ' (Bridge URL config missing)'
         }
         setState((prev) => ({ ...prev, connectionState: 'error', lastError: msg }))
         updateConnectionState('error')
@@ -359,9 +359,9 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
       }))
       updateConnectionState('error')
 
-       if (shouldReconnectRef.current && autoReconnect) {
-          reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
-        }
+      if (shouldReconnectRef.current && autoReconnect) {
+        reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
+      }
     }
   }, [
     ipAddress,

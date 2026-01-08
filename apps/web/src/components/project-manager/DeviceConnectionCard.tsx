@@ -289,11 +289,11 @@ export function DeviceConnectionCard({
         )}
 
         <div className="text-[10px] text-muted-foreground truncate" title={url}>
-           {url && `Using: ${url}`}
+          {url && `Using: ${url}`}
         </div>
         {state.lastError && (
           <div className="text-xs text-destructive break-words bg-destructive/5 p-1 rounded">
-             {state.lastError}
+            {state.lastError}
           </div>
         )}
       </CardContent>
