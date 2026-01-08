@@ -33,6 +33,11 @@ export enum GameCommandType {
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
 
+export type DeviceRole = 'player' | 'admin' | 'spectator'
+export type GameState = 'idle' | 'running' | 'paused' | 'finished'
+
+export type GameMode = 'free' | 'deathmatch' | 'team' | 'capture_flag' | 'timed'
+
 // ============= Messages: Browser → ESP32 =============
 
 export interface BaseClientMessage {

@@ -28,7 +28,7 @@ export function ProjectSettingsManager({
   const [name, setName] = useState(project.name)
   const [description, setDescription] = useState(project.description || '')
   const [gameModeId, setGameModeId] = useState(project.gameModeId)
-  const [duration, setDuration] = useState(project.duration || 0)
+  // const [duration, setDuration] = useState(project.duration || 0)
   const [isPending, startTransition] = useTransition()
 
   const handleSave = () => {
@@ -37,7 +37,7 @@ export function ProjectSettingsManager({
         name,
         description,
         gameModeId,
-        duration: Number(duration),
+        // duration: Number(duration),
       })
     })
   }
@@ -69,14 +69,14 @@ export function ProjectSettingsManager({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <label className="text-sm font-medium">Duration (minutes)</label>
             <Input
               type="number"
               value={duration}
               onChange={(e) => setDuration(Number(e.target.value) || 0)}
             />
-          </div>
+          </div> */}
         </div>
         <Button onClick={handleSave} disabled={isPending}>
           Save Changes

@@ -12,7 +12,7 @@ import { authConfig } from './auth.config'
 
 const nextAuth = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma as any),
   session: { strategy: 'jwt' },
   callbacks: {
     async jwt({ token, user }) {

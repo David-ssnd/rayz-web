@@ -90,7 +90,7 @@ export function GameOverview({ project }: GameOverviewProps) {
   }
 
   const handleStartGame = () => {
-    broadcastCommand('start', selectedGameMode)
+    broadcastCommand('start')
     setIsGameRunning(true)
   }
 

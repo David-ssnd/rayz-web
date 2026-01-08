@@ -17,9 +17,11 @@ import {
   ConnectionState,
   DeviceState,
   DeviceStatusMessage,
+  GameCommandType,
   GameMode,
   HitReportMessage,
   initialDeviceState,
+  OpCode,
   ServerMessage,
   ShotFiredMessage,
 } from './types'
@@ -33,8 +35,8 @@ export interface DeviceConnection {
   disconnect: () => void
   send: (message: ClientMessage) => boolean
   getStatus: () => boolean
-  updateConfig: (config: Omit<ConfigUpdateMessage, 'type'>) => boolean
-  sendGameCommand: (command: 'start' | 'stop' | 'reset', gamemode?: GameMode) => boolean
+  updateConfig: (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) => boolean
+  sendGameCommand: (command: 'start' | 'stop' | 'reset') => boolean
 }
 
 export interface DeviceConnectionsContextValue {
@@ -55,7 +57,7 @@ export interface DeviceConnectionsContextValue {
   /** Disconnect all devices */
   disconnectAll: () => void
   /** Send command to all connected devices */
-  broadcastCommand: (command: 'start' | 'stop' | 'reset', gamemode?: GameMode) => void
+  broadcastCommand: (command: 'start' | 'stop' | 'reset') => void
   /** Get all connected device states */
   connectedDevices: DeviceState[]
   /** Event handlers - can be set by consumers */
@@ -150,14 +152,18 @@ export function DeviceConnectionsProvider({
   }, [onHitReport, onShotFired, onStatusUpdate])
 
   // Update device state helper
-  const updateDeviceState = useCallback((ip: string, update: Partial<DeviceState>) => {
-    setDeviceStates((prev) => {
-      const newMap = new Map(prev)
-      const current = newMap.get(ip) || initialDeviceState(ip)
-      newMap.set(ip, { ...current, ...update })
-      return newMap
-    })
-  }, [])
+  const updateDeviceState = useCallback(
+    (ip: string, update: Partial<DeviceState> | ((prev: DeviceState) => Partial<DeviceState>)) => {
+      setDeviceStates((prev) => {
+        const newMap = new Map(prev)
+        const current = newMap.get(ip) || initialDeviceState(ip)
+        const partial = typeof update === 'function' ? update(current) : update
+        newMap.set(ip, { ...current, ...partial })
+        return newMap
+      })
+    },
+    []
+  )
 
   // Clear timeouts for a device
   const clearDeviceTimeouts = useCallback((ip: string) => {
@@ -193,19 +199,14 @@ export function DeviceConnectionsProvider({
           case 'status': {
             const status = message as DeviceStatusMessage
             updateDeviceState(ip, {
-              deviceId: status.device_id,
-              deviceName: status.device_name,
-              playerId: status.player_id,
-              role: status.role,
-              team: status.team,
-              color: status.color,
-              gamemode: status.gamemode,
-              gameState: status.game_state,
-              kills: status.kills,
-              deaths: status.deaths,
-              shots: status.shots,
-              hits: status.hits,
-              health: status.health,
+              deviceId: status.config.device_id,
+              playerId: status.config.player_id,
+              teamId: status.config.team_id,
+              colorRgb: status.config.color_rgb,
+              kills: status.stats.enemy_kills,
+              deaths: status.stats.deaths,
+              shots: status.stats.shots,
+              hearts: status.state.current_hearts,
               lastStatusUpdate: new Date(),
             })
             onStatusUpdateRef.current?.(status, ip)
@@ -214,17 +215,15 @@ export function DeviceConnectionsProvider({
 
           case 'heartbeat_ack': {
             updateDeviceState(ip, {
-              kills: message.kills,
-              deaths: message.deaths,
-              health: message.health,
-              gameState: message.game_state,
+              batteryVoltage: message.batt_voltage,
+              rssi: message.rssi,
               lastHeartbeat: new Date(),
             })
             break
           }
 
           case 'shot_fired': {
-            updateDeviceState(ip, { shots: message.shots })
+            updateDeviceState(ip, (prev) => ({ shots: prev.shots + 1 }))
             onShotFiredRef.current?.(message, ip)
             break
           }
@@ -235,17 +234,17 @@ export function DeviceConnectionsProvider({
           }
 
           case 'respawn': {
-            updateDeviceState(ip, { gameState: message.state })
+            updateDeviceState(ip, { hearts: message.current_hearts, isRespawning: false })
             break
           }
 
-          case 'game_state_change': {
-            updateDeviceState(ip, {
-              gameState: message.game_state,
-              gamemode: message.gamemode,
-            })
-            break
-          }
+          // case 'game_state_change': {
+          //   updateDeviceState(ip, {
+          //     gameState: message.game_state,
+          //     gamemode: message.gamemode,
+          //   })
+          //   break
+          // }
         }
       } catch (error) {
         console.warn(`[WS ${ip}] Failed to parse message:`, error)
@@ -285,11 +284,11 @@ export function DeviceConnectionsProvider({
           })
 
           // Request initial status
-          sendToDevice(ip, { type: 'get_status' })
+          sendToDevice(ip, { op: OpCode.GET_STATUS, type: 'get_status' })
 
           // Start heartbeat
           const interval = setInterval(() => {
-            sendToDevice(ip, { type: 'heartbeat' })
+            sendToDevice(ip, { op: OpCode.HEARTBEAT, type: 'heartbeat' })
           }, heartbeatInterval)
           heartbeatIntervalsRef.current.set(ip, interval)
         }
@@ -393,11 +392,18 @@ export function DeviceConnectionsProvider({
         connect: () => connectDevice(ip),
         disconnect: () => disconnectDevice(ip),
         send: (msg) => sendToDevice(ip, msg),
-        getStatus: () => sendToDevice(ip, { type: 'get_status' }),
-        updateConfig: (config) => sendToDevice(ip, { type: 'config_update', ...config }),
-        sendGameCommand: (command, gamemode) => {
-          const msg: ClientMessage = { type: 'game_command', command }
-          if (gamemode) (msg as any).gamemode = gamemode
+        getStatus: () => sendToDevice(ip, { op: OpCode.GET_STATUS, type: 'get_status' }),
+        updateConfig: (config) =>
+          sendToDevice(ip, { op: OpCode.CONFIG_UPDATE, type: 'config_update', ...config }),
+        sendGameCommand: (command) => {
+          const commandEnum =
+            command === 'start'
+              ? GameCommandType.START
+              : command === 'stop'
+                ? GameCommandType.STOP
+                : GameCommandType.RESET
+          const msg: any = { op: OpCode.GAME_COMMAND, type: 'game_command', command: commandEnum }
+          // if (gamemode) msg.gamemode = gamemode
           return sendToDevice(ip, msg)
         },
       }
@@ -426,11 +432,17 @@ export function DeviceConnectionsProvider({
 
   // Broadcast command to all connected devices
   const broadcastCommand = useCallback(
-    (command: 'start' | 'stop' | 'reset', gamemode?: GameMode) => {
+    (command: 'start' | 'stop' | 'reset') => {
       deviceStates.forEach((state, ip) => {
         if (state.connectionState === 'connected') {
-          const msg: ClientMessage = { type: 'game_command', command }
-          if (gamemode) (msg as any).gamemode = gamemode
+          const commandEnum =
+            command === 'start'
+              ? GameCommandType.START
+              : command === 'stop'
+                ? GameCommandType.STOP
+                : GameCommandType.RESET
+          const msg: any = { op: OpCode.GAME_COMMAND, type: 'game_command', command: commandEnum }
+          // if (gamemode) msg.gamemode = gamemode
           sendToDevice(ip, msg)
         }
       })

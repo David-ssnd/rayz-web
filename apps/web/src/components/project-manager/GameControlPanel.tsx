@@ -56,7 +56,7 @@ export function GameControlPanel({ project }: GameControlPanelProps) {
   const totalShots = connectedDevices.reduce((sum, d) => sum + (d.shots || 0), 0)
 
   const handleStartGame = () => {
-    broadcastCommand('start', selectedGameMode)
+    broadcastCommand('start')
     setIsGameRunning(true)
   }
 

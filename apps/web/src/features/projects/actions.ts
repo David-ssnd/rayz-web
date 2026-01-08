@@ -57,7 +57,7 @@ export async function createProject(name: string, gameModeName: string = 'Standa
 
 export async function updateProject(
   projectId: string,
-  data: { name?: string; description?: string; gameModeId?: string; duration?: number }
+  data: { name?: string; description?: string; gameModeId?: string }
 ) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
