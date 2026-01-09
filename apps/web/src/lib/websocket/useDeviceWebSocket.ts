@@ -1,7 +1,6 @@
-'use client'
+import { useCallback, useEffect, useState } from 'react'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-
+import { useDeviceConnections } from './DeviceConnectionContext'
 import {
   AckMessage,
   ClientMessage,
@@ -11,7 +10,6 @@ import {
   DeviceStatusMessage,
   GameCommandType,
   GameOverMessage,
-  HeartbeatAckMessage,
   HitReportMessage,
   initialDeviceState,
   OpCode,
@@ -66,15 +64,14 @@ export interface UseDeviceWebSocketReturn {
   playRemoteSound: (soundId: number) => boolean
 }
 
+/**
+ * @deprecated This hook is now a wrapper around the DeviceConnectionsContext.
+ * Please use `useDevice(ip)` or `useDeviceConnections()` directly where possible.
+ */
 export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDeviceWebSocketReturn {
   const {
     ipAddress,
-    bridgeUrl = process.env.NEXT_PUBLIC_WS_BRIDGE_URL,
     autoConnect = true,
-    autoReconnect = true,
-    reconnectDelay = 3000,
-    heartbeatInterval = 5000, // Faster heartbeat for RSSI updates
-    connectionTimeout = 5000,
     onStatus,
     onShotFired,
     onHitReport,
@@ -84,334 +81,93 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
     onAck,
     onMessage,
     onConnectionChange,
-    onError,
   } = options
 
-  const [state, setState] = useState<DeviceState>(() => initialDeviceState(ipAddress))
-  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
-  const [activeUrl, setActiveUrl] = useState<string | undefined>()
+  // Use the global context management to prevent double-sockets
+  const { getDeviceState, getConnection, addDevice, subscribe, isDeviceConnected } =
+    useDeviceConnections()
 
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const shouldReconnectRef = useRef(autoReconnect)
-  const attemptRef = useRef(0)
-  const mountedRef = useRef(true)
+  // Ensure device is tracked in context
+  useEffect(() => {
+    addDevice(ipAddress)
+    // Note: Context handles autoConnect if provider is configured so,
+    // but if we want per-hook autoConnect control we might need to expose it better.
+    // For now trust the context's autoConnect or the manual connection below.
+  }, [ipAddress, addDevice])
 
-  const updateConnectionState = useCallback(
-    (newState: ConnectionState) => {
-      setConnectionState(newState)
-      setState((prev) => ({ ...prev, connectionState: newState }))
-      onConnectionChange?.(newState)
-    },
-    [onConnectionChange]
-  )
+  const contextState = getDeviceState(ipAddress)
+  const connection = getConnection(ipAddress)
 
-  const clearTimeouts = useCallback(() => {
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
-    if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
-    if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current)
+  // Local state fallback if context is not yet ready (should be rare)
+  const safeState = contextState || initialDeviceState(ipAddress)
 
-    reconnectTimeoutRef.current = null
-    heartbeatIntervalRef.current = null
-    connectionTimeoutRef.current = null
-  }, [])
+  // Connection management wrappers
+  const connect = useCallback(() => connection?.connect(), [connection])
+  const disconnect = useCallback(() => connection?.disconnect(), [connection])
 
-  // =========================
-  // Incoming message handler
-  // =========================
-  const handleMessage = useCallback(
-    (event: MessageEvent) => {
-      if (!mountedRef.current) return
-
-      try {
-        const message = JSON.parse(event.data) as ServerMessage
-        onMessage?.(message)
-
-        // Handle based on OpCode for strictness, or type string for readability
-        switch (message.op) {
-          case OpCode.STATUS: {
-            const status = message as DeviceStatusMessage
-            setState((prev) => ({
-              ...prev,
-              // Identity & Config
-              deviceId: status.config.device_id,
-              playerId: status.config.player_id,
-              teamId: status.config.team_id,
-              colorRgb: status.config.color_rgb,
-
-              enableHearts: status.config.enable_hearts,
-              maxHearts: status.config.max_hearts,
-              enableAmmo: status.config.enable_ammo,
-              maxAmmo: status.config.max_ammo,
-
-              // Live Stats
-              kills: status.stats.enemy_kills + status.stats.friendly_kills,
-              deaths: status.stats.deaths,
-              shots: status.stats.shots,
-
-              // Live State
-              hearts: status.state.current_hearts,
-              ammo: status.state.current_ammo,
-              isRespawning: status.state.is_respawning,
-              isReloading: status.state.is_reloading,
-              gameRemainingTime: status.state.remaining_time_s,
-
-              lastStatusUpdate: new Date(),
-            }))
-            onStatus?.(status)
-            break
-          }
-
-          case OpCode.HEARTBEAT_ACK: {
-            const ack = message as HeartbeatAckMessage
-            setState((prev) => ({
-              ...prev,
-              rssi: ack.rssi,
-              batteryVoltage: ack.batt_voltage,
-              lastHeartbeat: new Date(),
-            }))
-            break
-          }
-
-          case OpCode.SHOT_FIRED: {
-            const shot = message as ShotFiredMessage
-            setState((prev) => ({
-              ...prev,
-              shots: (prev.shots || 0) + 1,
-            }))
-            onShotFired?.(shot)
-            break
-          }
-
-          case OpCode.HIT_REPORT: {
-            const hit = message as HitReportMessage
-            // Optionally update local health immediately, though Status update is authoritative
-            onHitReport?.(hit)
-            break
-          }
-
-          case OpCode.RESPAWN: {
-            const respawn = message as RespawnMessage
-            setState((prev) => ({
-              ...prev,
-              hearts: respawn.current_hearts ?? prev.maxHearts, // Fallback if not sent
-              isRespawning: false,
-            }))
-            onRespawn?.(respawn)
-            break
-          }
-
-          case OpCode.RELOAD_EVENT: {
-            const reload = message as ReloadMessage
-            setState((prev) => ({
-              ...prev,
-              ammo: reload.current_ammo,
-              isReloading: false,
-            }))
-            onReload?.(reload)
-            break
-          }
-
-          case OpCode.GAME_OVER: {
-            onGameOver?.(message as GameOverMessage)
-            break
-          }
-
-          case OpCode.ACK: {
-            onAck?.(message as AckMessage)
-            break
-          }
-        }
-      } catch (err) {
-        console.warn(`[WS ${ipAddress}] Invalid message`, err)
-      }
-    },
-    [
-      ipAddress,
-      onMessage,
-      onStatus,
-      onShotFired,
-      onHitReport,
-      onRespawn,
-      onReload,
-      onGameOver,
-      onAck,
-    ]
-  )
-
-  // =========================
-  // Send helper
-  // =========================
-  const send = useCallback((message: ClientMessage): boolean => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      try {
-        wsRef.current.send(JSON.stringify(message))
-        return true
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        setState((prev) => ({
-          ...prev,
-          connectionState: 'error',
-          lastError: `Send failed: ${msg}`,
-        }))
-        return false
-      }
+  // Sync connection state change callback
+  useEffect(() => {
+    if (onConnectionChange) {
+      onConnectionChange(safeState.connectionState)
     }
-    setState((prev) => ({ ...prev, lastError: 'Cannot send: socket not open' }))
-    return false
-  }, [])
+  }, [safeState.connectionState, onConnectionChange])
 
-  // =========================
-  // Connect / Disconnect
-  // =========================
-  const connect = useCallback(() => {
-    if (
-      wsRef.current?.readyState === WebSocket.OPEN ||
-      wsRef.current?.readyState === WebSocket.CONNECTING
-    ) {
-      return
-    }
+  // Event Subscription Bridge
+  useEffect(() => {
+    const unsubs: Array<() => void> = []
 
-    clearTimeouts()
-    updateConnectionState('connecting')
+    if (onStatus) unsubs.push(subscribe(ipAddress, 'status', (data) => onStatus(data)))
+    if (onShotFired) unsubs.push(subscribe(ipAddress, 'shot', (data) => onShotFired(data)))
+    if (onHitReport) unsubs.push(subscribe(ipAddress, 'hit', (data) => onHitReport(data)))
+    if (onRespawn) unsubs.push(subscribe(ipAddress, 'respawn', (data) => onRespawn(data)))
+    if (onReload) unsubs.push(subscribe(ipAddress, 'reload', (data) => onReload(data)))
+    if (onGameOver) unsubs.push(subscribe(ipAddress, 'gameover', (data) => onGameOver(data)))
+    if (onAck) unsubs.push(subscribe(ipAddress, 'ack', (data) => onAck(data)))
 
-    // Determine correct URL based on environment (HTTPS/HTTP)
-    let url = ''
-    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+    // Generic message handler
+    if (onMessage) unsubs.push(subscribe(ipAddress, 'message', (data) => onMessage(data)))
 
-    if (isHttps) {
-      if (bridgeUrl) {
-        url = `${bridgeUrl}?target=${encodeURIComponent(ipAddress)}`
-      } else {
-        // Fallback or error if bridge missing
-        console.warn(
-          '[WS] HTTPS detected but no bridge URL provided. Falls back to WSS (requires valid cert on device).'
-        )
-        url = `wss://${ipAddress}/ws`
-      }
-    } else {
-      url = `ws://${ipAddress}/ws`
-    }
-
-    setActiveUrl(url)
-
-    try {
-      const ws = new WebSocket(url)
-      wsRef.current = ws
-
-      connectionTimeoutRef.current = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING) ws.close()
-      }, connectionTimeout)
-
-      ws.onopen = () => {
-        if (!mountedRef.current) return
-        clearTimeout(connectionTimeoutRef.current!)
-        attemptRef.current = 0 // Reset attempts on success
-        updateConnectionState('connected')
-
-        setState((prev) => ({
-          ...prev,
-          lastConnected: new Date(),
-          lastError: undefined,
-        }))
-
-        // Initial Status Fetch
-        send({ op: OpCode.GET_STATUS, type: 'get_status' })
-
-        // Start Heartbeat Loop
-        heartbeatIntervalRef.current = setInterval(() => {
-          send({ op: OpCode.HEARTBEAT, type: 'heartbeat' })
-        }, heartbeatInterval)
-      }
-
-      ws.onmessage = handleMessage
-
-      ws.onerror = (e) => {
-        // Provide helpful hint when on HTTPS and using ws:// (should not happen now), or WSS handshake fails
-        let msg = 'WebSocket error'
-        if (typeof window !== 'undefined') {
-          if (isHttps && url.startsWith('ws://')) msg += ' (blocked insecure ws:// from HTTPS page)'
-          if (isHttps && url.startsWith('wss://'))
-            msg += ' (WSS handshake failed — device likely lacks TLS or cert invalid)'
-          if (isHttps && url.includes('bridge') && !bridgeUrl) msg += ' (Bridge URL config missing)'
-        }
-        setState((prev) => ({ ...prev, connectionState: 'error', lastError: msg }))
-        updateConnectionState('error')
-        onError?.(msg)
-      }
-
-      ws.onclose = () => {
-        clearTimeouts()
-        updateConnectionState('disconnected')
-
-        if (shouldReconnectRef.current && autoReconnect) {
-          reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
-        }
-      }
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error)
-      setState((prev) => ({
-        ...prev,
-        connectionState: 'error',
-        lastError: `Failed to create connection: ${msg}`,
-      }))
-      updateConnectionState('error')
-
-      if (shouldReconnectRef.current && autoReconnect) {
-        reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay)
-      }
+    return () => {
+      unsubs.forEach((unsub) => unsub())
     }
   }, [
     ipAddress,
-    bridgeUrl,
-    autoReconnect,
-    reconnectDelay,
-    heartbeatInterval,
-    connectionTimeout,
-    clearTimeouts,
-    handleMessage,
-    send,
-    updateConnectionState,
-    onError,
+    subscribe,
+    onStatus,
+    onShotFired,
+    onHitReport,
+    onRespawn,
+    onReload,
+    onGameOver,
+    onAck,
+    onMessage,
   ])
 
-  const disconnect = useCallback(() => {
-    shouldReconnectRef.current = false
-    clearTimeouts()
-    wsRef.current?.close()
-    wsRef.current = null
-    updateConnectionState('disconnected')
-  }, [clearTimeouts, updateConnectionState])
+  // Helper Wrappers (Ported from original logic but delegating to connection)
+  const send = useCallback((msg: ClientMessage) => connection?.send(msg) ?? false, [connection])
 
-  // =========================
-  // Public API Wrappers
-  // =========================
+  const getStatus = useCallback(() => connection?.getStatus() ?? false, [connection])
 
-  const getStatus = useCallback(() => send({ op: OpCode.GET_STATUS, type: 'get_status' }), [send])
-
-  const sendHeartbeat = useCallback(() => send({ op: OpCode.HEARTBEAT, type: 'heartbeat' }), [send])
+  const sendHeartbeat = useCallback(() => send({ op: OpCode.HEARTBEAT, type: 'heartbeat' }), [send]) // Connection context already does this automatically! But we expose it anyway.
 
   const updateConfig = useCallback(
-    (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) =>
-      send({
-        op: OpCode.CONFIG_UPDATE,
-        type: 'config_update',
-        req_id: crypto.randomUUID().slice(0, 8),
-        ...config,
-      }),
-    [send]
+    (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) => connection?.updateConfig(config) ?? false,
+    [connection]
   )
 
   const sendGameCommand = useCallback(
-    (command: GameCommandType) =>
-      send({
+    (command: GameCommandType) => {
+      // Map enum back to 'start' | 'stop' | 'reset' string expected by context?
+      // Actually context `sendGameCommand` takes string or enum?
+      // Context `sendGameCommand` takes string 'start' | 'stop'.
+      // But we have `OpCode` generic send available.
+      return send({
         op: OpCode.GAME_COMMAND,
         type: 'game_command',
         req_id: crypto.randomUUID().slice(0, 8),
         command,
-      }),
+      })
+    },
     [send]
   )
 
@@ -440,38 +196,11 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions): UseDevic
     [send]
   )
 
-  // =========================
-  // Lifecycle
-  // =========================
-  useEffect(() => {
-    mountedRef.current = true
-    shouldReconnectRef.current = autoReconnect
-
-    if (autoConnect) connect()
-
-    return () => {
-      mountedRef.current = false
-      shouldReconnectRef.current = false
-      clearTimeouts()
-      wsRef.current?.close()
-      wsRef.current = null
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    // Reset state when IP changes
-    setState(initialDeviceState(ipAddress))
-    if (autoConnect) {
-      disconnect()
-      shouldReconnectRef.current = autoReconnect
-      connect()
-    }
-  }, [ipAddress]) // eslint-disable-line react-hooks/exhaustive-deps
-
   return {
-    state,
-    connectionState,
-    isConnected: connectionState === 'connected',
+    state: safeState,
+    connectionState: safeState.connectionState,
+    isConnected: safeState.connectionState === 'connected',
+    url: isDeviceConnected(ipAddress) ? `ws://${ipAddress}/ws` : undefined,
     connect,
     disconnect,
     send,

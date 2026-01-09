@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Activity,
   Disc,
@@ -13,7 +13,7 @@ import {
   WifiOff,
 } from 'lucide-react'
 
-import { useDeviceWebSocket } from '@/lib/websocket'
+import { initialDeviceState, useDevice, useDeviceConnections } from '@/lib/websocket'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -49,16 +49,29 @@ export function DeviceConnectionCard({
 
   const isAssigned = !!assignedPlayer
 
-  const { state, connectionState, isConnected, connect, disconnect, getStatus, updateConfig, url } =
-    useDeviceWebSocket({
-      ipAddress,
-      autoConnect: true,
-      autoReconnect: true,
-    })
+  const { connection, state: contextState, isConnected } = useDevice(ipAddress)
+  const { retryDevice } = useDeviceConnections()
+  const state = contextState || initialDeviceState(ipAddress)
+  const connectionState = state.connectionState
+  const isError = connectionState === 'error'
+
+  const connect = () => connection?.connect()
+  const disconnect = () => connection?.disconnect()
+  const retry = () => retryDevice(ipAddress)
+  const getStatus = () => connection?.getStatus()
+  const updateConfig = (config: any) => connection?.updateConfig(config)
+  const url = isConnected ? `ws://${ipAddress}/ws` : undefined
 
   // Sync assigned player → device configuration
+  // Using a ref for connection to avoid re-triggering effect on every stat update (heartbeat/rssi)
+  const connectionRef = useRef(connection)
   useEffect(() => {
-    if (isConnected && isAssigned && assignedPlayer) {
+    connectionRef.current = connection
+  }, [connection])
+
+  useEffect(() => {
+    // Only attempt sync if we are verified connected and have a valid connection object
+    if (isConnected && isAssigned && assignedPlayer && connectionRef.current) {
       // Calculate color integer
       let colorInt: number | undefined = undefined
       if (playerTeam?.color) {
@@ -67,7 +80,8 @@ export function DeviceConnectionCard({
         if (!isNaN(parsed)) colorInt = parsed
       }
 
-      updateConfig({
+      // Send configuration to device
+      connectionRef.current.updateConfig({
         // IMPORTANT: Use the Protocol ID (number), not the DB ID (UUID)
         // If your Player type still uses 'playerId' for the int, change .number to .playerId
         player_id: assignedPlayer.number,
@@ -75,7 +89,7 @@ export function DeviceConnectionCard({
         color_rgb: colorInt,
       })
     }
-  }, [isConnected, isAssigned, assignedPlayer, playerTeam, updateConfig])
+  }, [isConnected, isAssigned, assignedPlayer, playerTeam]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUpdateConfig = () => {
     updateConfig({
@@ -248,7 +262,12 @@ export function DeviceConnectionCard({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-1 pt-1">
-          {!isConnected ? (
+          {isError ? (
+            <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={retry}>
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry Connection
+            </Button>
+          ) : !isConnected ? (
             <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={connect}>
               <Wifi className="w-3 h-3 mr-1" />
               Connect
@@ -292,7 +311,10 @@ export function DeviceConnectionCard({
           {url && `Using: ${url}`}
         </div>
         {state.lastError && (
-          <div className="text-xs text-destructive break-words bg-destructive/5 p-1 rounded">
+          <div
+            className="text-xs text-destructive bg-destructive/5 p-1 rounded"
+            style={{ wordBreak: 'break-word' }}
+          >
             {state.lastError}
           </div>
         )}

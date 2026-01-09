@@ -18,7 +18,6 @@ import {
   DeviceState,
   DeviceStatusMessage,
   GameCommandType,
-  GameMode,
   HitReportMessage,
   initialDeviceState,
   OpCode,
@@ -39,6 +38,18 @@ export interface DeviceConnection {
   sendGameCommand: (command: 'start' | 'stop' | 'reset') => boolean
 }
 
+type DeviceEventType =
+  | 'status'
+  | 'shot'
+  | 'hit'
+  | 'respawn'
+  | 'reload'
+  | 'gameover'
+  | 'ack'
+  | 'message'
+  | 'connection'
+type DeviceEventHandler = (data: any, ip: string) => void
+
 export interface DeviceConnectionsContextValue {
   /** Map of IP address to device connection */
   connections: Map<string, DeviceConnection>
@@ -48,6 +59,10 @@ export interface DeviceConnectionsContextValue {
   removeDevice: (ipAddress: string) => void
   /** Get connection for a specific device */
   getConnection: (ipAddress: string) => DeviceConnection | undefined
+  /** Subscribe to device events */
+  subscribe: (ip: string, event: DeviceEventType, handler: DeviceEventHandler) => () => void
+  /** Retry connecting to a device (resets retry count) */
+  retryDevice: (ipAddress: string) => void
   /** Get device state for a specific device */
   getDeviceState: (ipAddress: string) => DeviceState | undefined
   /** Check if device is connected */
@@ -102,13 +117,21 @@ interface DeviceConnectionsProviderProps {
   children: ReactNode
   /** Initial device IPs to connect to */
   initialDevices?: string[]
+  /** Setup bridge URL for HTTPS environments */
+  bridgeUrl?: string
   /** Auto-connect on add (default: true) */
   autoConnect?: boolean
   /** Auto-reconnect on disconnect (default: true) */
   autoReconnect?: boolean
-  /** Reconnect delay in ms (default: 3000) */
+  /** Initial reconnect delay in ms (default: 1000) */
   reconnectDelay?: number
-  /** Heartbeat interval in ms (default: 60000) */
+  /** Maximum reconnect delay in ms (default: 30000) */
+  maxReconnectDelay?: number
+  /** Maximum retry attempts before giving up (default: 10, 0 = infinite) */
+  maxRetries?: number
+  /** Connection timeout in ms (default: 5000) */
+  connectionTimeout?: number
+  /** Heartbeat interval in ms (default: 30000) */
   heartbeatInterval?: number
   /** Callback when a hit is reported */
   onHitReport?: (hit: HitReportMessage, fromDevice: string) => void
@@ -121,10 +144,14 @@ interface DeviceConnectionsProviderProps {
 export function DeviceConnectionsProvider({
   children,
   initialDevices = [],
+  bridgeUrl = process.env.NEXT_PUBLIC_WS_BRIDGE_URL,
   autoConnect = true,
   autoReconnect = true,
-  reconnectDelay = 3000,
-  heartbeatInterval = 60000,
+  reconnectDelay = 1000,
+  maxReconnectDelay = 30000,
+  maxRetries = 10,
+  connectionTimeout = 5000,
+  heartbeatInterval = 30000,
   onHitReport,
   onShotFired,
   onStatusUpdate,
@@ -137,13 +164,79 @@ export function DeviceConnectionsProvider({
   // Store WebSocket references
   const websocketsRef = useRef<Map<string, WebSocket>>(new Map())
   const reconnectTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const connectionTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const heartbeatIntervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const shouldReconnectRef = useRef<Map<string, boolean>>(new Map())
+  const retryCountRef = useRef<Map<string, number>>(new Map())
+  // Track devices with pending connections (to prevent Strict Mode double-connect)
+  const connectingRef = useRef<Set<string>>(new Set())
+  // Track if component is mounted (for Strict Mode cleanup handling)
+  const isMountedRef = useRef(true)
+
+  // Event Subscribers: Map<IP, Map<Event, Set<Handler>>>
+  const subscribersRef = useRef<Map<string, Map<DeviceEventType, Set<DeviceEventHandler>>>>(
+    new Map()
+  )
 
   // Event handlers refs (to avoid recreating callbacks)
   const onHitReportRef = useRef(onHitReport)
   const onShotFiredRef = useRef(onShotFired)
   const onStatusUpdateRef = useRef(onStatusUpdate)
+
+  const bridgeUrlRef = useRef(bridgeUrl)
+  useEffect(() => {
+    bridgeUrlRef.current = bridgeUrl
+  }, [bridgeUrl])
+
+  // Calculate next reconnect delay with exponential backoff
+  const getNextReconnectDelay = useCallback(
+    (ip: string): number => {
+      const retries = retryCountRef.current.get(ip) || 0
+      const delay = Math.min(reconnectDelay * Math.pow(2, retries), maxReconnectDelay)
+      return delay
+    },
+    [reconnectDelay, maxReconnectDelay]
+  )
+
+  // Subscribe to device events
+  const subscribe = useCallback(
+    (ip: string, event: DeviceEventType, handler: DeviceEventHandler) => {
+      if (!subscribersRef.current.has(ip)) {
+        subscribersRef.current.set(ip, new Map())
+      }
+      const deviceSubs = subscribersRef.current.get(ip)!
+
+      if (!deviceSubs.has(event)) {
+        deviceSubs.set(event, new Set())
+      }
+      deviceSubs.get(event)!.add(handler)
+
+      return () => {
+        const currentDeviceSubs = subscribersRef.current.get(ip)
+        if (currentDeviceSubs) {
+          currentDeviceSubs.get(event)?.delete(handler)
+        }
+      }
+    },
+    []
+  )
+
+  const emit = useCallback((ip: string, event: DeviceEventType, data: any) => {
+    const deviceSubs = subscribersRef.current.get(ip)
+    if (deviceSubs?.has(event)) {
+      deviceSubs.get(event)!.forEach((handler) => {
+        try {
+          handler(data, ip)
+        } catch (e) {
+          console.error(`[WS ${ip}] Error in event handler for ${event}:`, e)
+        }
+      })
+    }
+    // Also emit generic 'message' event for all server messages
+    if (event !== 'connection' && event !== 'message' && deviceSubs?.has('message')) {
+      deviceSubs.get('message')!.forEach((handler) => handler(data, ip))
+    }
+  }, [])
 
   useEffect(() => {
     onHitReportRef.current = onHitReport
@@ -171,6 +264,11 @@ export function DeviceConnectionsProvider({
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout)
       reconnectTimeoutsRef.current.delete(ip)
+    }
+    const connectionTimeout = connectionTimeoutsRef.current.get(ip)
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout)
+      connectionTimeoutsRef.current.delete(ip)
     }
     const heartbeatInterval = heartbeatIntervalsRef.current.get(ip)
     if (heartbeatInterval) {
@@ -226,6 +324,7 @@ export function DeviceConnectionsProvider({
               lastStatusUpdate: new Date(),
             })
             onStatusUpdateRef.current?.(status, ip)
+            emit(ip, 'status', status)
             break
           }
 
@@ -235,43 +334,57 @@ export function DeviceConnectionsProvider({
               rssi: message.rssi,
               lastHeartbeat: new Date(),
             })
+            emit(ip, 'ack', message)
             break
           }
 
           case 'shot_fired': {
             updateDeviceState(ip, (prev) => ({ shots: prev.shots + 1 }))
             onShotFiredRef.current?.(message, ip)
+            emit(ip, 'shot', message)
             break
           }
 
           case 'hit_report': {
             onHitReportRef.current?.(message, ip)
+            emit(ip, 'hit', message)
             break
           }
 
           case 'respawn': {
             updateDeviceState(ip, { hearts: message.current_hearts, isRespawning: false })
+            emit(ip, 'respawn', message)
             break
           }
 
-          // case 'game_state_change': {
-          //   updateDeviceState(ip, {
-          //     gameState: message.game_state,
-          //     gamemode: message.gamemode,
-          //   })
-          //   break
-          // }
+          // Add other events if missing from switch but present in types
+          case 'game_over': {
+            emit(ip, 'gameover', message)
+            break
+          }
+
+          case 'reload_event': {
+            // Assuming ReloadMessage type exists and has type 'reload_event' or similar
+            updateDeviceState(ip, { isReloading: false })
+            emit(ip, 'reload', message)
+            break
+          }
         }
       } catch (error) {
         console.warn(`[WS ${ip}] Failed to parse message:`, error)
       }
     },
-    [updateDeviceState]
+    [updateDeviceState, emit]
   )
 
   // Connect to a device
   const connectDevice = useCallback(
     (ip: string) => {
+      // Guard: Check if already connecting (prevents Strict Mode double-connect)
+      if (connectingRef.current.has(ip)) {
+        return
+      }
+
       const existingWs = websocketsRef.current.get(ip)
       if (
         existingWs?.readyState === WebSocket.OPEN ||
@@ -280,24 +393,82 @@ export function DeviceConnectionsProvider({
         return
       }
 
+      // Check if we've exceeded max retries
+      const currentRetries = retryCountRef.current.get(ip) || 0
+      if (maxRetries > 0 && currentRetries >= maxRetries) {
+        updateDeviceState(ip, {
+          connectionState: 'error',
+          lastError: `Device offline (${maxRetries} attempts failed)`,
+        })
+        shouldReconnectRef.current.set(ip, false)
+        return
+      }
+
+      // Mark as connecting
+      connectingRef.current.add(ip)
+
       clearDeviceTimeouts(ip)
-      updateDeviceState(ip, { connectionState: 'connecting' })
+      updateDeviceState(ip, { connectionState: 'connecting', lastError: undefined })
       shouldReconnectRef.current.set(ip, autoReconnect)
 
-      const wsUrl = `ws://${ip}/ws`
-      console.log(`[WS ${ip}] Connecting to ${wsUrl}...`)
+      // Determine correct URL based on environment (HTTPS/HTTP)
+      let wsUrl = ''
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+      const bridge = bridgeUrlRef.current
+
+      if (isHttps) {
+        if (bridge) {
+          wsUrl = `${bridge}?target=${encodeURIComponent(ip)}`
+        } else {
+          // Only warn once on first attempt
+          if (currentRetries === 0) {
+            console.warn('[WS] HTTPS detected but no bridge URL provided. Falls back to WSS.')
+          }
+          wsUrl = `wss://${ip}/ws`
+        }
+      } else {
+        wsUrl = `ws://${ip}/ws`
+      }
+
+      // Only log on first connection attempt
+      if (currentRetries === 0) {
+        console.log(`[WS ${ip}] Connecting to ${wsUrl}...`)
+      }
 
       try {
         const ws = new WebSocket(wsUrl)
         websocketsRef.current.set(ip, ws)
 
+        // Set connection timeout
+        const connTimeout = setTimeout(() => {
+          if (ws.readyState === WebSocket.CONNECTING) {
+            ws.close()
+            // Connection timeout triggers onclose, which handles reconnect
+          }
+        }, connectionTimeout)
+        connectionTimeoutsRef.current.set(ip, connTimeout)
+
         ws.onopen = () => {
+          // Clear connection timeout
+          const timeout = connectionTimeoutsRef.current.get(ip)
+          if (timeout) {
+            clearTimeout(timeout)
+            connectionTimeoutsRef.current.delete(ip)
+          }
+
+          // Clear connecting flag
+          connectingRef.current.delete(ip)
+
+          // Reset retry count on successful connection
+          retryCountRef.current.set(ip, 0)
+
           console.log(`[WS ${ip}] Connected!`)
           updateDeviceState(ip, {
             connectionState: 'connected',
             lastConnected: new Date(),
             lastError: undefined,
           })
+          emit(ip, 'connection', { connected: true })
 
           // Request initial status
           sendToDevice(ip, { op: OpCode.GET_STATUS, type: 'get_status' })
@@ -313,37 +484,72 @@ export function DeviceConnectionsProvider({
 
         ws.onerror = () => {
           // Browser hides detailed WS errors; add helpful hint for HTTPS mixed content
-          let msg = 'WebSocket error'
+          let msg = 'Connection failed'
           if (typeof window !== 'undefined') {
             const isHttps = window.location.protocol === 'https:'
             if (isHttps && typeof wsUrl === 'string' && wsUrl.startsWith('ws://')) {
-              msg += ' (blocked insecure ws:// from HTTPS page)'
+              msg = 'Blocked: insecure ws:// from HTTPS page'
             }
           }
-          updateDeviceState(ip, {
-            connectionState: 'error',
-            lastError: msg,
-          })
+          updateDeviceState(ip, { lastError: msg })
         }
 
         ws.onclose = () => {
-          console.log(`[WS ${ip}] Disconnected`)
+          // Clear connecting flag
+          connectingRef.current.delete(ip)
+
+          // Clear connection timeout if still pending
+          const connTimeout = connectionTimeoutsRef.current.get(ip)
+          if (connTimeout) {
+            clearTimeout(connTimeout)
+            connectionTimeoutsRef.current.delete(ip)
+          }
+
           clearDeviceTimeouts(ip)
           websocketsRef.current.delete(ip)
           updateDeviceState(ip, { connectionState: 'disconnected' })
+          emit(ip, 'connection', { connected: false })
 
-          // Schedule reconnect
-          if (shouldReconnectRef.current.get(ip)) {
-            console.log(`[WS ${ip}] Reconnecting in ${reconnectDelay}ms...`)
+          // Don't reconnect if component is unmounting (Strict Mode)
+          if (!isMountedRef.current) {
+            return
+          }
+
+          // Schedule reconnect with exponential backoff
+          if (shouldReconnectRef.current.get(ip) && autoReconnect) {
+            const newRetryCount = (retryCountRef.current.get(ip) || 0) + 1
+            retryCountRef.current.set(ip, newRetryCount)
+
+            // Check if we should continue retrying
+            if (maxRetries > 0 && newRetryCount >= maxRetries) {
+              console.log(`[WS ${ip}] Max retries (${maxRetries}) reached. Device offline.`)
+              updateDeviceState(ip, {
+                connectionState: 'error',
+                lastError: `Device offline (${maxRetries} attempts failed)`,
+              })
+              shouldReconnectRef.current.set(ip, false)
+              return
+            }
+
+            const delay = getNextReconnectDelay(ip)
+            // Only log every 3rd retry to reduce noise
+            if (newRetryCount <= 1 || newRetryCount % 3 === 0) {
+              console.log(
+                `[WS ${ip}] Reconnecting in ${delay}ms... (attempt ${newRetryCount}/${maxRetries || '∞'})`
+              )
+            }
+
             const timeout = setTimeout(() => {
               if (shouldReconnectRef.current.get(ip)) {
                 connectDevice(ip)
               }
-            }, reconnectDelay)
+            }, delay)
             reconnectTimeoutsRef.current.set(ip, timeout)
           }
         }
       } catch (error) {
+        // Clear connecting flag on error
+        connectingRef.current.delete(ip)
         const msg = error instanceof Error ? error.message : String(error)
         updateDeviceState(ip, {
           connectionState: 'error',
@@ -353,12 +559,15 @@ export function DeviceConnectionsProvider({
     },
     [
       autoReconnect,
+      maxRetries,
+      connectionTimeout,
       heartbeatInterval,
-      reconnectDelay,
+      getNextReconnectDelay,
       clearDeviceTimeouts,
       updateDeviceState,
       sendToDevice,
       handleMessage,
+      emit,
     ]
   )
 
@@ -380,14 +589,31 @@ export function DeviceConnectionsProvider({
   // Add a device
   const addDevice = useCallback(
     (ip: string) => {
-      if (!deviceStates.has(ip)) {
-        setDeviceStates((prev) => new Map(prev).set(ip, initialDeviceState(ip)))
+      // Check if device already exists - if so, don't re-add or re-connect
+      // Use a ref check to avoid triggering on every render
+      const existingWs = websocketsRef.current.get(ip)
+      const isConnecting = connectingRef.current.has(ip)
+      const existsInState = deviceStates.has(ip)
+
+      if (existsInState || existingWs || isConnecting) {
+        // Device already managed, skip
+        return
       }
+
+      setDeviceStates((prev) => {
+        if (prev.has(ip)) return prev
+        const newMap = new Map(prev)
+        newMap.set(ip, initialDeviceState(ip))
+        return newMap
+      })
+      // Reset retry count when adding a device
+      retryCountRef.current.set(ip, 0)
+      shouldReconnectRef.current.set(ip, autoReconnect)
       if (autoConnect) {
         connectDevice(ip)
       }
     },
-    [deviceStates, autoConnect, connectDevice]
+    [autoConnect, autoReconnect, connectDevice, deviceStates]
   )
 
   // Remove a device
@@ -401,6 +627,26 @@ export function DeviceConnectionsProvider({
       })
     },
     [disconnectDevice]
+  )
+
+  // Retry device connection (resets retry count)
+  const retryDevice = useCallback(
+    (ip: string) => {
+      // Reset retry count
+      retryCountRef.current.set(ip, 0)
+      shouldReconnectRef.current.set(ip, autoReconnect)
+      // Clear any pending reconnect
+      clearDeviceTimeouts(ip)
+      // Close existing connection if any
+      const existingWs = websocketsRef.current.get(ip)
+      if (existingWs) {
+        existingWs.close()
+        websocketsRef.current.delete(ip)
+      }
+      // Attempt fresh connection
+      connectDevice(ip)
+    },
+    [autoReconnect, clearDeviceTimeouts, connectDevice]
   )
 
   // Get connection for a device
@@ -425,9 +671,11 @@ export function DeviceConnectionsProvider({
               : command === 'stop'
                 ? GameCommandType.STOP
                 : GameCommandType.RESET
-          const msg: any = { op: OpCode.GAME_COMMAND, type: 'game_command', command: commandEnum }
-          // if (gamemode) msg.gamemode = gamemode
-          return sendToDevice(ip, msg)
+          return sendToDevice(ip, {
+            op: OpCode.GAME_COMMAND,
+            type: 'game_command',
+            command: commandEnum,
+          })
         },
       }
     },
@@ -464,9 +712,11 @@ export function DeviceConnectionsProvider({
               : command === 'stop'
                 ? GameCommandType.STOP
                 : GameCommandType.RESET
-          const msg: any = { op: OpCode.GAME_COMMAND, type: 'game_command', command: commandEnum }
-          // if (gamemode) msg.gamemode = gamemode
-          sendToDevice(ip, msg)
+          sendToDevice(ip, {
+            op: OpCode.GAME_COMMAND,
+            type: 'game_command',
+            command: commandEnum,
+          })
         }
       })
     },
@@ -491,9 +741,11 @@ export function DeviceConnectionsProvider({
 
   // Initialize connections for initial devices
   useEffect(() => {
+    isMountedRef.current = true
+
     if (autoConnect) {
       initialDevices.forEach((ip) => {
-        if (!websocketsRef.current.has(ip)) {
+        if (!websocketsRef.current.has(ip) && !connectingRef.current.has(ip)) {
           connectDevice(ip)
         }
       })
@@ -501,11 +753,16 @@ export function DeviceConnectionsProvider({
 
     // Cleanup on unmount
     return () => {
+      isMountedRef.current = false
+      // Clear all connecting flags
+      connectingRef.current.clear()
+
       websocketsRef.current.forEach((ws, ip) => {
         shouldReconnectRef.current.set(ip, false)
         ws.close()
       })
       reconnectTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
+      connectionTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
       heartbeatIntervalsRef.current.forEach((interval) => clearInterval(interval))
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -517,6 +774,7 @@ export function DeviceConnectionsProvider({
     getConnection,
     getDeviceState,
     isDeviceConnected,
+    retryDevice,
     connectAll,
     disconnectAll,
     broadcastCommand,
@@ -524,6 +782,7 @@ export function DeviceConnectionsProvider({
     onHitReport,
     onShotFired,
     onStatusUpdate,
+    subscribe: subscribe, // Make sure this is exposed!
   }
 
   return (

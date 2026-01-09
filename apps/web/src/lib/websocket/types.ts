@@ -1,4 +1,5 @@
 // WebSocket Protocol Types — Matches ESP32 Firmware Protocol v2.2
+// Gamemode is UI-only; firmware receives explicit config values, not a gamemode label.
 
 // ============= Enums & Constants =============
 
@@ -35,8 +36,6 @@ export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'err
 
 export type DeviceRole = 'player' | 'admin' | 'spectator'
 export type GameState = 'idle' | 'running' | 'paused' | 'finished'
-
-export type GameMode = 'free' | 'deathmatch' | 'team' | 'capture_flag' | 'timed'
 
 // ============= Messages: Browser → ESP32 =============
 
