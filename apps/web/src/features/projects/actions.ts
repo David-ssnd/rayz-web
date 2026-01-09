@@ -5,6 +5,20 @@ import { auth } from '@/auth'
 
 import { prisma } from '@/lib/server/prisma'
 
+type GameModeOverrides = {
+  durationSeconds?: number
+  enableHearts?: boolean
+  maxHearts?: number
+  spawnHearts?: number
+  respawnTimeSec?: number
+  friendlyFire?: boolean
+  damageIn?: number
+  damageOut?: number
+  enableAmmo?: boolean
+  maxAmmo?: number
+  reloadTimeMs?: number
+}
+
 // --- Projects ---
 
 export async function getProjects() {
@@ -75,7 +89,73 @@ export async function updateProject(
 }
 
 export async function getGameModes() {
-  return prisma.gameMode.findMany()
+  const session = await auth()
+  const userId = session?.user?.id
+
+  return prisma.gameMode.findMany({
+    where: userId
+      ? {
+          OR: [
+            { isSystem: true },
+            { userId },
+            // Allow legacy global modes that are not marked as system and have no owner
+            { userId: null, isSystem: false },
+          ],
+        }
+      : { isSystem: true },
+    orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
+  })
+}
+
+export async function createCustomGameMode({
+  name,
+  description,
+  baseGameModeId,
+  overrides = {},
+}: {
+  name: string
+  description?: string
+  baseGameModeId: string
+  overrides?: GameModeOverrides
+}) {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) return { error: 'Unauthorized' }
+
+  const base = await prisma.gameMode.findUnique({ where: { id: baseGameModeId } })
+  const canUseBase = base && (base.isSystem || base.userId === userId || base.userId === null)
+  if (!base || !canUseBase) return { error: 'Base game mode not found' }
+
+  try {
+    const gameMode = await prisma.gameMode.create({
+      data: {
+        name,
+        description: description ?? base.description,
+        isSystem: false,
+        userId,
+        durationSeconds: overrides.durationSeconds ?? base.durationSeconds,
+        enableHearts: overrides.enableHearts ?? base.enableHearts,
+        maxHearts: overrides.maxHearts ?? base.maxHearts,
+        spawnHearts: overrides.spawnHearts ?? base.spawnHearts,
+        respawnTimeSec: overrides.respawnTimeSec ?? base.respawnTimeSec,
+        friendlyFire: overrides.friendlyFire ?? base.friendlyFire,
+        damageIn: overrides.damageIn ?? base.damageIn,
+        damageOut: overrides.damageOut ?? base.damageOut,
+        enableAmmo: overrides.enableAmmo ?? base.enableAmmo,
+        maxAmmo: overrides.maxAmmo ?? base.maxAmmo,
+        reloadTimeMs: overrides.reloadTimeMs ?? base.reloadTimeMs,
+      },
+    })
+
+    revalidatePath('/control')
+    return { success: true, gameMode }
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return { error: 'A game mode with this name already exists' }
+    }
+    console.error('Error creating game mode:', error)
+    return { error: 'Failed to create game mode' }
+  }
 }
 
 export async function deleteProject(projectId: string) {

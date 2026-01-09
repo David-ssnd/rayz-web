@@ -261,6 +261,8 @@ export interface DeviceState {
   kills: number
   deaths: number
   shots: number
+  friendlyKills: number
+  hitsReceived: number
 
   // Live State
   hearts: number
@@ -290,6 +292,8 @@ export const initialDeviceState = (ipAddress: string): DeviceState => ({
   kills: 0,
   deaths: 0,
   shots: 0,
+  friendlyKills: 0,
+  hitsReceived: 0,
 
   hearts: 0,
   ammo: 0,

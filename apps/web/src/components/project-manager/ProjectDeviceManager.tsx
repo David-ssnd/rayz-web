@@ -148,6 +148,7 @@ function ProjectDeviceManagerInner({ project, availableDevices }: ProjectDeviceM
           return (
             <div key={device.id} className="relative group">
               <DeviceConnectionCard
+                deviceId={device.id}
                 ipAddress={device.ipAddress}
                 deviceName={device.name ?? device.role + ' ' + device.ipAddress}
                 assignedPlayer={assignedPlayer}

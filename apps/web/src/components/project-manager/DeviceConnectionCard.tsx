@@ -1,10 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react' // added useTransition
+import { updateDevice } from '@/features/devices/actions' // Import action
 import {
   Activity,
+  AlertCircle,
+  Check,
   Disc,
+  Gamepad2,
   Link,
+  MoreHorizontal,
   RefreshCw,
   Settings,
   Unlink,
@@ -17,6 +22,15 @@ import { initialDeviceState, useDevice, useDeviceConnections } from '@/lib/webso
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input' // added Input
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -29,6 +43,7 @@ import {
 import type { Player, Team } from './types'
 
 interface DeviceConnectionCardProps {
+  deviceId?: string // added deviceId
   ipAddress: string
   deviceName?: string
   assignedPlayer?: Player | null
@@ -38,6 +53,7 @@ interface DeviceConnectionCardProps {
 }
 
 export function DeviceConnectionCard({
+  deviceId, // destructured
   ipAddress,
   deviceName: initialName,
   assignedPlayer,
@@ -45,7 +61,11 @@ export function DeviceConnectionCard({
   teams = [],
 }: DeviceConnectionCardProps) {
   const [showSettings, setShowSettings] = useState(false)
+  const [editName, setEditName] = useState(initialName || ipAddress) // Name state
   const [configTeamId, setConfigTeamId] = useState<number | undefined>(undefined)
+  const [configStatus, setConfigStatus] = useState<'idle' | 'error' | 'success'>('idle')
+  const [configMessage, setConfigMessage] = useState<string>('')
+  const [isPending, startTransition] = useTransition() // Transition for server action
 
   const isAssigned = !!assignedPlayer
 
@@ -91,11 +111,50 @@ export function DeviceConnectionCard({
     }
   }, [isConnected, isAssigned, assignedPlayer, playerTeam]) // eslint-disable-line react-hooks/exhaustive-deps
 
+const DeviceConnectionCard = ({
+// ... 
+}: DeviceConnectionCardProps) => { // (No functional change here just marking position)
+// ...
   const handleUpdateConfig = () => {
-    updateConfig({
-      team_id: configTeamId,
+    setConfigStatus('idle')
+    setConfigMessage('')
+
+    startTransition(async () => {
+      // 1. Update Name in DB if changed
+      if (deviceId && editName !== initialName) {
+        const res = await updateDevice(deviceId, { name: editName })
+        if (res.error) {
+          setConfigStatus('error')
+          setConfigMessage('Failed to update name')
+          return
+        }
+      }
+
+      // 2. Update Device Config over WS
+      if (connectionRef.current) {
+        const ok = connectionRef.current.updateConfig({
+          team_id: configTeamId ?? 0,
+        })
+        if (ok) {
+          setConfigStatus('success')
+          setConfigMessage('Saved') // Generic success
+          setShowSettings(false)
+        } else {
+          setConfigStatus('error')
+          setConfigMessage('WS Send Failed')
+        }
+      } else {
+        // If only updating name (e.g. offline device), that's fine too
+        if (deviceId && editName !== initialName) {
+          setConfigStatus('success')
+          setConfigMessage('Name saved (Device offline)')
+          setShowSettings(false)
+        } else {
+          setConfigStatus('error')
+          setConfigMessage('Device offline')
+        }
+      }
     })
-    setShowSettings(false)
   }
 
   const getConnectionBadge = () => {
@@ -166,7 +225,7 @@ export function DeviceConnectionCard({
 
         {/* Live Stats Grid */}
         {isConnected && (
-          <div className="grid grid-cols-4 gap-1 text-center text-xs bg-muted/50 rounded-md p-2">
+          <div className="grid grid-cols-3 gap-1 text-center text-xs bg-muted/50 rounded-md p-2">
             <div>
               <div className="font-bold text-sm">{state.kills}</div>
               <div className="text-muted-foreground text-[10px]">Kills</div>
@@ -176,12 +235,20 @@ export function DeviceConnectionCard({
               <div className="text-muted-foreground text-[10px]">Deaths</div>
             </div>
             <div>
+              <div className="font-bold text-sm">{state.friendlyKills || 0}</div>
+              <div className="text-muted-foreground text-[10px]">Friendly</div>
+            </div>
+            <div>
               <div className="font-bold text-sm">{state.hearts}</div>
               <div className="text-muted-foreground text-[10px]">Hearts</div>
             </div>
             <div>
               <div className="font-bold text-sm">{state.maxAmmo === -1 ? '∞' : state.ammo}</div>
               <div className="text-muted-foreground text-[10px]">Ammo</div>
+            </div>
+            <div>
+              <div className="font-bold text-sm">{state.hitsReceived || 0}</div>
+              <div className="text-muted-foreground text-[10px]">Hits</div>
             </div>
           </div>
         )}
@@ -204,48 +271,73 @@ export function DeviceConnectionCard({
           </div>
         )}
 
-        {/* Settings (Only shown when not assigned to a managed player) */}
-        {!isAssigned && showSettings && (
+        {/* Settings (Shown when toggled; removed isAssigned restriction to allow name edits) */}
+        {showSettings && (
           <div className="space-y-2 p-2 border rounded-md bg-muted/50">
             <div className="grid gap-1.5">
-              <label className="text-xs font-medium">Manual Team Override</label>
-              <Select
-                // Convert number to string for Select value
-                value={configTeamId !== undefined ? String(configTeamId) : ''}
-                onValueChange={(value) => {
-                  if (value === '') {
-                    setConfigTeamId(undefined)
-                  } else {
-                    setConfigTeamId(Number(value))
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Select team" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No Team (Solo)</SelectItem>
-                  {teams.map((team) => (
-                    // IMPORTANT: Value must be the Protocol ID (number), NOT the DB ID (UUID)
-                    // If we use team.id (UUID), Number(value) will result in NaN
-                    <SelectItem key={team.id} value={String(team.number)}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: team.color }}
-                        />
-                        {team.name}{' '}
-                        <span className="text-muted-foreground text-[10px]">
-                          (ID: {team.number})
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-xs font-medium">Device Name</label>
+              <Input
+                className="h-8 text-xs"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Enter device name"
+              />
             </div>
+            
+            {!isAssigned && (
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium">Manual Team Override</label>
+                <Select
+                  // Convert number to string for Select value
+                  value={configTeamId !== undefined ? String(configTeamId) : 'none'}
+                  onValueChange={(value) => {
+                    if (value === 'none') {
+                      setConfigTeamId(undefined)
+                    } else {
+                      setConfigTeamId(Number(value))
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Team (Solo)</SelectItem>
+                    {teams.map((team) => (
+                      // IMPORTANT: Value must be the Protocol ID (number), NOT the DB ID (UUID)
+                      // If we use team.id (UUID), Number(value) will result in NaN
+                      <SelectItem key={team.id} value={String(team.number)}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: team.color }}
+                          />
+                          {team.name}{' '}
+                          <span className="text-muted-foreground text-[10px]">
+                            (ID: {team.number})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {configStatus !== 'idle' && configMessage && (
+              <div
+                className={`flex items-center gap-2 text-xs ${configStatus === 'error' ? 'text-destructive' : 'text-green-600'}`}
+              >
+                {configStatus === 'error' ? (
+                  <AlertCircle className="w-3 h-3" />
+                ) : (
+                  <Check className="w-3 h-3" />
+                )}
+                {configMessage}
+              </div>
+            )}
             <div className="flex gap-1">
-              <Button size="sm" className="h-7 text-xs flex-1" onClick={handleUpdateConfig}>
+              <Button size="sm" className="h-7 text-xs flex-1" onClick={handleUpdateConfig} disabled={isPending}>
                 Apply
               </Button>
               <Button
@@ -283,20 +375,38 @@ export function DeviceConnectionCard({
                 <RefreshCw className="w-3 h-3 sm:mr-1" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
-              {!isAssigned && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => setShowSettings(!showSettings)}
-                >
-                  <Settings className="w-3 h-3 sm:mr-1" />
-                  <span className="hidden sm:inline">Config</span>
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">Config</span>
+              </Button>
               <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={disconnect}>
                 <Unlink className="w-3 h-3" />
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => connection?.playRemoteSound(0)}>
+                    <Gamepad2 className="mr-2 h-4 w-4" /> Play Whistle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => connection?.playRemoteSound(1)}>
+                    <Gamepad2 className="mr-2 h-4 w-4" /> Play Siren
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => connection?.confirmKill()}>
+                    <Check className="mr-2 h-4 w-4" /> Confirm Kill
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
         </div>

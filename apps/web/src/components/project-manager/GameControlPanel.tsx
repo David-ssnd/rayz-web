@@ -9,6 +9,7 @@ import {
   Settings2,
   Square,
   Timer,
+  UploadCloud, // Added
   Wifi,
   WifiOff,
 } from 'lucide-react'
@@ -19,12 +20,22 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 
 import type { Project } from './types'
 
@@ -40,16 +51,75 @@ const GAME_MODES: { value: WSGameMode; label: string; description: string }[] = 
   { value: 'timed', label: 'Timed Match', description: 'Time-limited match' },
 ]
 
-export function GameControlPanel({ project }: GameControlPanelProps) {
-  const [selectedGameMode, setSelectedGameMode] = useState<WSGameMode>('free')
-  const [isGameRunning, setIsGameRunning] = useState(false)
+interface GameSettings {
+  durationMinutes: number
+  maxHearts: number
+  maxAmmo: number
+  respawnTimeSeconds: number
+  friendlyFire: boolean
+  enableHearts: boolean
+  enableAmmo: boolean
+}
 
-  const { broadcastCommand, connectAll, disconnectAll, connectedDevices, connections } =
-    useDeviceConnections()
+const DEFAULT_SETTINGS: GameSettings = {
+  durationMinutes: 10,
+  maxHearts: 5,
+  maxAmmo: 30,
+  respawnTimeSeconds: 5,
+  friendlyFire: false,
+  en// 1. Broadcast Configuration based on mode and settings
+    broadcastConfig({
+      game_duration_s: settings.durationMinutes * 60,
+      max_hearts: settings.maxHearts,
+      max_ammo: settings.maxAmmo,
+      respawn_time_s: settings.respawnTimeSeconds,
+      friendly_fire: settings.friendlyFire,
+      enable_hearts: settings.enableHearts,
+      enable_ammo: settings.enableAmmo,
+      // Reset logic often handled by device on START, or send explicit reset flag
+    })
 
-  const totalDevices = project.devices?.length || 0
-  const onlineCount = connectedDevices.length
+    // 2. Start Game
+    setTimeout(() => {
+      broadcastCommand('start')
+      setIsGameRunning(true)
+    }, 200)
+  }
 
+  const handleStopGame = () => {
+    broadcastCommand('stop')
+    setIsGameRunning(false)
+  }
+
+  const handleResetStats = () => {
+    broadcastCommand('reset')
+  }
+
+  return (
+    <Card className="border-2 border-primary/20">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Activity className="w-5 h-5" />
+            Game Control
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowSettings(true)}
+              disabled={isGameRunning}
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+            <SettingsDialog
+              open={showSettings}
+              onOpenChange={setShowSettings}
+              settings={settings}
+              onSettingsChange={setSettings}
+            />
+            
   // Get aggregated stats from all connected devices
   const totalKills = connectedDevices.reduce((sum, d) => sum + (d.kills || 0), 0)
   const totalDeaths = connectedDevices.reduce((sum, d) => sum + (d.deaths || 0), 0)
@@ -142,6 +212,15 @@ export function GameControlPanel({ project }: GameControlPanelProps) {
           <Button
             variant="outline"
             className="h-12 gap-2"
+            onClick={handleSyncRules}
+            disabled={isGameRunning || onlineCount === 0}
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span className="hidden sm:inline">Sync Rules</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-12 gap-2"
             onClick={handleResetStats}
             disabled={isGameRunning}
           >
@@ -150,18 +229,111 @@ export function GameControlPanel({ project }: GameControlPanelProps) {
           </Button>
           <Button
             variant="outline"
-            className="h-12 gap-2"
+            className="h-12 gap-2 col-span-2 sm:col-span-4" 
             onClick={onlineCount > 0 ? disconnectAll : connectAll}
           >
             {onlineCount > 0 ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
-            <span className="hidden sm:inline">{onlineCount > 0 ? 'Disconnect' : 'Connect'}</span>
+            <span className="hidden sm:inline">{onlineCount > 0 ? 'Disconnect All' : 'Connect All'}</span>
           </Button>
         </div>
 
         {/* Live Stats */}
         {onlineCount > 0 && (
           <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-            <div className="text-center p-2 bg-muted/50 rounded-md">
+ 
+
+function SettingsDialog({
+  open,
+  onOpenChange,
+  settings,
+  onSettingsChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  settings: GameSettings
+  onSettingsChange: (settings: GameSettings) => void
+}) {
+  const update = (key: keyof GameSettings, value: any) => {
+    onSettingsChange({ ...settings, [key]: value })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Game Settings</DialogTitle>
+          <DialogDescription>Configure rules for the next match.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="flex items-center justify-between space-x-2">
+            <label className="text-sm font-medium leading-none">Enable Hearts (Health)</label>
+            <Switch
+              checked={settings.enableHearts}
+              onCheckedChange={(c) => update('enableHearts', c)}
+            />
+          </div>
+          {settings.enableHearts && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <label className="text-sm">Max Hearts</label>
+                <Input
+                  type="number"
+                  value={settings.maxHearts}
+                  onChange={(e) => update('maxHearts', Number(e.target.value))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm">Respawn (sec)</label>
+                <Input
+                  type="number"
+                  value={settings.respawnTimeSeconds}
+                  onChange={(e) => update('respawnTimeSeconds', Number(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between space-x-2 pt-2 border-t">
+            <label className="text-sm font-medium leading-none">Enable Ammo</label>
+            <Switch
+              checked={settings.enableAmmo}
+              onCheckedChange={(c) => update('enableAmmo', c)}
+            />
+          </div>
+          {settings.enableAmmo && (
+            <div className="grid gap-2">
+              <label className="text-sm">Max Ammo</label>
+              <Input
+                type="number"
+                value={settings.maxAmmo}
+                onChange={(e) => update('maxAmmo', Number(e.target.value))}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between space-x-2 pt-2 border-t">
+            <label className="text-sm font-medium leading-none">Friendly Fire</label>
+            <Switch
+              checked={settings.friendlyFire}
+              onCheckedChange={(c) => update('friendlyFire', c)}
+            />
+          </div>
+
+          <div className="grid gap-2 pt-2 border-t">
+            <label className="text-sm font-medium">Game Duration (minutes)</label>
+            <Input
+              type="number"
+              value={settings.durationMinutes}
+              onChange={(e) => update('durationMinutes', Number(e.target.value))}
+              placeholder="0 = Infinite"
+            />
+            <p className="text-[10px] text-muted-foreground">Set to 0 for unlimited time.</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}           <div className="text-center p-2 bg-muted/50 rounded-md">
               <div className="text-2xl font-bold">{totalKills}</div>
               <div className="text-xs text-muted-foreground">Total Kills</div>
             </div>

@@ -23,6 +23,9 @@ import {
   OpCode,
   ServerMessage,
   ShotFiredMessage,
+  AckMessage,
+  GameOverMessage,
+  ReloadMessage,
 } from './types'
 
 // ============= Types =============
@@ -36,6 +39,9 @@ export interface DeviceConnection {
   getStatus: () => boolean
   updateConfig: (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) => boolean
   sendGameCommand: (command: 'start' | 'stop' | 'reset') => boolean
+  forwardHit: (shooterId: number) => boolean
+  confirmKill: () => boolean
+  playRemoteSound: (soundId: number) => boolean
 }
 
 type DeviceEventType =
@@ -48,6 +54,7 @@ type DeviceEventType =
   | 'ack'
   | 'message'
   | 'connection'
+
 type DeviceEventHandler = (data: any, ip: string) => void
 
 export interface DeviceConnectionsContextValue {
@@ -73,6 +80,8 @@ export interface DeviceConnectionsContextValue {
   disconnectAll: () => void
   /** Send command to all connected devices */
   broadcastCommand: (command: 'start' | 'stop' | 'reset') => void
+  /** Broadcast configuration to all connected devices */
+  broadcastConfig: (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) => void
   /** Get all connected device states */
   connectedDevices: DeviceState[]
   /** Event handlers - can be set by consumers */
@@ -133,6 +142,8 @@ interface DeviceConnectionsProviderProps {
   connectionTimeout?: number
   /** Heartbeat interval in ms (default: 30000) */
   heartbeatInterval?: number
+  /** Enable WebSocket debug logging (default: dev only) */
+  logging?: boolean
   /** Callback when a hit is reported */
   onHitReport?: (hit: HitReportMessage, fromDevice: string) => void
   /** Callback when a shot is fired */
@@ -152,6 +163,7 @@ export function DeviceConnectionsProvider({
   maxRetries = 10,
   connectionTimeout = 5000,
   heartbeatInterval = 30000,
+  logging,
   onHitReport,
   onShotFired,
   onStatusUpdate,
@@ -172,6 +184,24 @@ export function DeviceConnectionsProvider({
   const connectingRef = useRef<Set<string>>(new Set())
   // Track if component is mounted (for Strict Mode cleanup handling)
   const isMountedRef = useRef(true)
+  // Logging toggle (default: enabled in dev, disabled in prod unless overridden)
+  const loggingEnabledRef = useRef(logging ?? process.env.NODE_ENV !== 'production')
+
+  useEffect(() => {
+    loggingEnabledRef.current = logging ?? process.env.NODE_ENV !== 'production'
+  }, [logging])
+
+  const logDebug = useCallback((message: string) => {
+    if (loggingEnabledRef.current) {
+      console.log(message)
+    }
+  }, [])
+
+  const logWarn = useCallback((message: string) => {
+    if (loggingEnabledRef.current) {
+      console.warn(message)
+    }
+  }, [])
 
   // Event Subscribers: Map<IP, Map<Event, Set<Handler>>>
   const subscribersRef = useRef<Map<string, Map<DeviceEventType, Set<DeviceEventHandler>>>>(
@@ -320,7 +350,10 @@ export function DeviceConnectionsProvider({
               kills: status.stats.enemy_kills,
               deaths: status.stats.deaths,
               shots: status.stats.shots,
+              friendlyKills: status.stats.friendly_kills,
+              hitsReceived: status.stats.hits_received || 0,
               hearts: status.state.current_hearts,
+              
               lastStatusUpdate: new Date(),
             })
             onStatusUpdateRef.current?.(status, ip)
@@ -364,17 +397,27 @@ export function DeviceConnectionsProvider({
           }
 
           case 'reload_event': {
-            // Assuming ReloadMessage type exists and has type 'reload_event' or similar
-            updateDeviceState(ip, { isReloading: false })
+            const reload = message as ReloadMessage
+            updateDeviceState(ip, { 
+              isReloading: false,
+              ammo: reload.current_ammo
+            })
             emit(ip, 'reload', message)
+            break
+          }
+
+          case 'ack': {
+            emit(ip, 'ack', message)
             break
           }
         }
       } catch (error) {
-        console.warn(`[WS ${ip}] Failed to parse message:`, error)
+        logWarn(
+          `[WS ${ip}] Failed to parse message: ${error instanceof Error ? error.message : String(error)}`
+        )
       }
     },
-    [updateDeviceState, emit]
+    [updateDeviceState, emit, logWarn]
   )
 
   // Connect to a device
@@ -422,7 +465,7 @@ export function DeviceConnectionsProvider({
         } else {
           // Only warn once on first attempt
           if (currentRetries === 0) {
-            console.warn('[WS] HTTPS detected but no bridge URL provided. Falls back to WSS.')
+            logWarn('[WS] HTTPS detected but no bridge URL provided. Falls back to WSS.')
           }
           wsUrl = `wss://${ip}/ws`
         }
@@ -432,7 +475,7 @@ export function DeviceConnectionsProvider({
 
       // Only log on first connection attempt
       if (currentRetries === 0) {
-        console.log(`[WS ${ip}] Connecting to ${wsUrl}...`)
+        logDebug(`[WS ${ip}] Connecting to ${wsUrl}...`)
       }
 
       try {
@@ -462,7 +505,7 @@ export function DeviceConnectionsProvider({
           // Reset retry count on successful connection
           retryCountRef.current.set(ip, 0)
 
-          console.log(`[WS ${ip}] Connected!`)
+          logDebug(`[WS ${ip}] Connected!`)
           updateDeviceState(ip, {
             connectionState: 'connected',
             lastConnected: new Date(),
@@ -522,7 +565,7 @@ export function DeviceConnectionsProvider({
 
             // Check if we should continue retrying
             if (maxRetries > 0 && newRetryCount >= maxRetries) {
-              console.log(`[WS ${ip}] Max retries (${maxRetries}) reached. Device offline.`)
+              logDebug(`[WS ${ip}] Max retries (${maxRetries}) reached. Device offline.`)
               updateDeviceState(ip, {
                 connectionState: 'error',
                 lastError: `Device offline (${maxRetries} attempts failed)`,
@@ -534,7 +577,7 @@ export function DeviceConnectionsProvider({
             const delay = getNextReconnectDelay(ip)
             // Only log every 3rd retry to reduce noise
             if (newRetryCount <= 1 || newRetryCount % 3 === 0) {
-              console.log(
+              logDebug(
                 `[WS ${ip}] Reconnecting in ${delay}ms... (attempt ${newRetryCount}/${maxRetries || '∞'})`
               )
             }
@@ -568,6 +611,8 @@ export function DeviceConnectionsProvider({
       sendToDevice,
       handleMessage,
       emit,
+      logDebug,
+      logWarn,
     ]
   )
 
@@ -677,6 +722,12 @@ export function DeviceConnectionsProvider({
             command: commandEnum,
           })
         },
+        forwardHit: (shooterId) =>
+          sendToDevice(ip, { op: OpCode.HIT_FORWARD, type: 'hit_forward', shooter_id: shooterId }),
+        confirmKill: () =>
+          sendToDevice(ip, { op: OpCode.KILL_CONFIRMED, type: 'kill_confirmed' }),
+        playRemoteSound: (soundId) =>
+          sendToDevice(ip, { op: OpCode.REMOTE_SOUND, type: 'remote_sound', sound_id: soundId }),
       }
     },
     [deviceStates, connectDevice, disconnectDevice, sendToDevice]
@@ -716,6 +767,22 @@ export function DeviceConnectionsProvider({
             op: OpCode.GAME_COMMAND,
             type: 'game_command',
             command: commandEnum,
+          })
+        }
+      })
+    },
+    [deviceStates, sendToDevice]
+  )
+
+  // Broadcast configuration to all connected devices
+  const broadcastConfig = useCallback(
+    (config: Omit<ConfigUpdateMessage, 'type' | 'op'>) => {
+      deviceStates.forEach((state, ip) => {
+        if (state.connectionState === 'connected') {
+          sendToDevice(ip, {
+            op: OpCode.CONFIG_UPDATE,
+            type: 'config_update',
+            ...config,
           })
         }
       })
@@ -778,6 +845,7 @@ export function DeviceConnectionsProvider({
     connectAll,
     disconnectAll,
     broadcastCommand,
+    broadcastConfig,
     connectedDevices,
     onHitReport,
     onShotFired,

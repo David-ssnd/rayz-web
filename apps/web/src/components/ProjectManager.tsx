@@ -11,6 +11,7 @@ import {
   Monitor,
   Plus,
   Settings,
+  Settings2,
   Users,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -29,6 +30,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import { GameModeManager } from './project-manager/GameModeManager'
 import { GameOverview } from './project-manager/GameOverview'
 import { PlayerManager } from './project-manager/PlayerManager'
 import { ProjectDeviceManager } from './project-manager/ProjectDeviceManager'
@@ -50,10 +52,15 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
   const [menuOpen, setMenuOpen] = useState(false)
 
   const [localProjects, setLocalProjects] = useState<Project[]>(projects)
+  const [localGameModes, setLocalGameModes] = useState<GameMode[]>(gameModes)
 
   useEffect(() => {
     setLocalProjects(projects)
   }, [projects])
+
+  useEffect(() => {
+    setLocalGameModes(gameModes)
+  }, [gameModes])
 
   const selectedProject = localProjects.find((p) => p.id === selectedProjectId)
 
@@ -202,6 +209,12 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                         Overview
                       </span>
                     </TabsTrigger>
+                    <TabsTrigger value="gamemode" className="group flex-1 sm:flex-none">
+                      <Settings2 className="w-4 h-4 lg:mr-2" />
+                      <span className="hidden lg:inline group-data-[state=active]:inline">
+                        Gamemode
+                      </span>
+                    </TabsTrigger>
                     <TabsTrigger value="devices" className="group flex-1 sm:flex-none">
                       <Monitor className="w-4 h-4 lg:mr-2" />
                       <span className="hidden lg:inline group-data-[state=active]:inline">
@@ -232,6 +245,13 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                     <GameOverview project={selectedProject} />
                   </TabsContent>
 
+                  <TabsContent value="gamemode" className="mt-4">
+                    <GameModeManager
+                      gameModes={localGameModes}
+                      onCreated={(mode) => setLocalGameModes((prev) => [...prev, mode])}
+                    />
+                  </TabsContent>
+
                   <TabsContent value="devices" className="mt-4">
                     <ProjectDeviceManager
                       project={selectedProject}
@@ -253,7 +273,7 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                   <TabsContent value="project" className="mt-4">
                     <ProjectSettingsManager
                       project={selectedProject}
-                      gameModes={gameModes}
+                      gameModes={localGameModes}
                       onDeleteAction={() => handleDeleteProject(selectedProject.id)}
                     />
                   </TabsContent>

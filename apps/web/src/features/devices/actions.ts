@@ -74,6 +74,41 @@ export async function removeDevice(deviceId: string) {
   }
 }
 
+export async function updateDevice(deviceId: string, data: { name?: string }) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { error: 'Unauthorized' }
+  }
+
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId },
+      include: { profile: true },
+    })
+
+    if (!device) {
+      return { error: 'Device not found' }
+    }
+
+    if (device.profile.userId !== session.user.id) {
+      return { error: 'Unauthorized' }
+    }
+
+    await prisma.device.update({
+      where: { id: deviceId },
+      data: {
+        name: data.name,
+      },
+    })
+
+    revalidatePath('/control')
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating device:', error)
+    return { error: 'Failed to update device' }
+  }
+}
+
 export async function getDevices() {
   const session = await auth()
   if (!session?.user?.id) {
