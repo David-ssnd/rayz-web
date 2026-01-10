@@ -9,7 +9,7 @@ import {
   Settings2,
   Square,
   Timer,
-  UploadCloud, // Added
+  UploadCloud,
   Wifi,
   WifiOff,
 } from 'lucide-react'
@@ -25,7 +25,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import {
@@ -67,7 +66,31 @@ const DEFAULT_SETTINGS: GameSettings = {
   maxAmmo: 30,
   respawnTimeSeconds: 5,
   friendlyFire: false,
-  en// 1. Broadcast Configuration based on mode and settings
+  enableHearts: true,
+  enableAmmo: true,
+}
+
+export function GameControlPanel({ project }: GameControlPanelProps) {
+  const [selectedGameMode, setSelectedGameMode] = useState<WSGameMode>('free')
+  const [isGameRunning, setIsGameRunning] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
+
+  const { connectedDevices, connectAll, disconnectAll, broadcastCommand, broadcastConfig } =
+    useDeviceConnections()
+
+  const onlineCount = connectedDevices.length
+  // In a real app we might pass the total count of devices from props if known,
+  // effectively project.devices.length if that data is available.
+  const totalDevices = project.devices?.length || 0
+
+  // Get aggregated stats from all connected devices
+  const totalKills = connectedDevices.reduce((sum, d) => sum + (d.kills || 0), 0)
+  const totalDeaths = connectedDevices.reduce((sum, d) => sum + (d.deaths || 0), 0)
+  const totalShots = connectedDevices.reduce((sum, d) => sum + (d.shots || 0), 0)
+
+  const handleStartGame = () => {
+    // 1. Broadcast Configuration based on mode and settings
     broadcastConfig({
       game_duration_s: settings.durationMinutes * 60,
       max_hearts: settings.maxHearts,
@@ -76,7 +99,6 @@ const DEFAULT_SETTINGS: GameSettings = {
       friendly_fire: settings.friendlyFire,
       enable_hearts: settings.enableHearts,
       enable_ammo: settings.enableAmmo,
-      // Reset logic often handled by device on START, or send explicit reset flag
     })
 
     // 2. Start Game
@@ -84,6 +106,19 @@ const DEFAULT_SETTINGS: GameSettings = {
       broadcastCommand('start')
       setIsGameRunning(true)
     }, 200)
+  }
+
+  const handleSyncRules = () => {
+    // Send updated rules without starting/stopping
+    broadcastConfig({
+      game_duration_s: settings.durationMinutes * 60,
+      max_hearts: settings.maxHearts,
+      max_ammo: settings.maxAmmo,
+      respawn_time_s: settings.respawnTimeSeconds,
+      friendly_fire: settings.friendlyFire,
+      enable_hearts: settings.enableHearts,
+      enable_ammo: settings.enableAmmo,
+    })
   }
 
   const handleStopGame = () => {
@@ -119,35 +154,7 @@ const DEFAULT_SETTINGS: GameSettings = {
               settings={settings}
               onSettingsChange={setSettings}
             />
-            
-  // Get aggregated stats from all connected devices
-  const totalKills = connectedDevices.reduce((sum, d) => sum + (d.kills || 0), 0)
-  const totalDeaths = connectedDevices.reduce((sum, d) => sum + (d.deaths || 0), 0)
-  const totalShots = connectedDevices.reduce((sum, d) => sum + (d.shots || 0), 0)
 
-  const handleStartGame = () => {
-    broadcastCommand('start')
-    setIsGameRunning(true)
-  }
-
-  const handleStopGame = () => {
-    broadcastCommand('stop')
-    setIsGameRunning(false)
-  }
-
-  const handleResetStats = () => {
-    broadcastCommand('reset')
-  }
-
-  return (
-    <Card className="border-2 border-primary/20">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Activity className="w-5 h-5" />
-            Game Control
-          </CardTitle>
-          <div className="flex items-center gap-2">
             <Badge variant={onlineCount > 0 ? 'default' : 'secondary'} className="gap-1">
               {onlineCount > 0 ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
               {onlineCount}/{totalDevices} Online
@@ -229,18 +236,51 @@ const DEFAULT_SETTINGS: GameSettings = {
           </Button>
           <Button
             variant="outline"
-            className="h-12 gap-2 col-span-2 sm:col-span-4" 
+            className="h-12 gap-2 col-span-2 sm:col-span-4"
             onClick={onlineCount > 0 ? disconnectAll : connectAll}
           >
             {onlineCount > 0 ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
-            <span className="hidden sm:inline">{onlineCount > 0 ? 'Disconnect All' : 'Connect All'}</span>
+            <span className="hidden sm:inline">
+              {onlineCount > 0 ? 'Disconnect All' : 'Connect All'}
+            </span>
           </Button>
         </div>
 
         {/* Live Stats */}
         {onlineCount > 0 && (
           <div className="grid grid-cols-3 gap-2 pt-2 border-t">
- 
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalKills}</div>
+              <div className="text-xs text-muted-foreground">Total Kills</div>
+            </div>
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalDeaths}</div>
+              <div className="text-xs text-muted-foreground">Total Deaths</div>
+            </div>
+            <div className="text-center p-2 bg-muted/50 rounded-md">
+              <div className="text-2xl font-bold">{totalShots}</div>
+              <div className="text-xs text-muted-foreground">Total Shots</div>
+            </div>
+          </div>
+        )}
+
+        {/* No devices warning */}
+        {totalDevices === 0 && (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            Add devices to this project to start a game.
+          </div>
+        )}
+
+        {/* All offline warning */}
+        {totalDevices > 0 && onlineCount === 0 && (
+          <div className="text-center py-2 text-amber-600 text-sm">
+            No devices connected. Click "Connect" to connect all devices.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 function SettingsDialog({
   open,
@@ -332,36 +372,5 @@ function SettingsDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
-}           <div className="text-center p-2 bg-muted/50 rounded-md">
-              <div className="text-2xl font-bold">{totalKills}</div>
-              <div className="text-xs text-muted-foreground">Total Kills</div>
-            </div>
-            <div className="text-center p-2 bg-muted/50 rounded-md">
-              <div className="text-2xl font-bold">{totalDeaths}</div>
-              <div className="text-xs text-muted-foreground">Total Deaths</div>
-            </div>
-            <div className="text-center p-2 bg-muted/50 rounded-md">
-              <div className="text-2xl font-bold">{totalShots}</div>
-              <div className="text-xs text-muted-foreground">Total Shots</div>
-            </div>
-          </div>
-        )}
-
-        {/* No devices warning */}
-        {totalDevices === 0 && (
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            Add devices to this project to start a game.
-          </div>
-        )}
-
-        {/* All offline warning */}
-        {totalDevices > 0 && onlineCount === 0 && (
-          <div className="text-center py-2 text-amber-600 text-sm">
-            No devices connected. Click "Connect" to connect all devices.
-          </div>
-        )}
-      </CardContent>
-    </Card>
   )
 }

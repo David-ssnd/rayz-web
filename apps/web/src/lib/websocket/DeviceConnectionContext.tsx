@@ -12,20 +12,20 @@ import {
 } from 'react'
 
 import {
+  AckMessage,
   ClientMessage,
   ConfigUpdateMessage,
   ConnectionState,
   DeviceState,
   DeviceStatusMessage,
   GameCommandType,
+  GameOverMessage,
   HitReportMessage,
   initialDeviceState,
   OpCode,
+  ReloadMessage,
   ServerMessage,
   ShotFiredMessage,
-  AckMessage,
-  GameOverMessage,
-  ReloadMessage,
 } from './types'
 
 // ============= Types =============
@@ -353,7 +353,7 @@ export function DeviceConnectionsProvider({
               friendlyKills: status.stats.friendly_kills,
               hitsReceived: status.stats.hits_received || 0,
               hearts: status.state.current_hearts,
-              
+
               lastStatusUpdate: new Date(),
             })
             onStatusUpdateRef.current?.(status, ip)
@@ -398,9 +398,9 @@ export function DeviceConnectionsProvider({
 
           case 'reload_event': {
             const reload = message as ReloadMessage
-            updateDeviceState(ip, { 
+            updateDeviceState(ip, {
               isReloading: false,
-              ammo: reload.current_ammo
+              ammo: reload.current_ammo,
             })
             emit(ip, 'reload', message)
             break
@@ -724,8 +724,7 @@ export function DeviceConnectionsProvider({
         },
         forwardHit: (shooterId) =>
           sendToDevice(ip, { op: OpCode.HIT_FORWARD, type: 'hit_forward', shooter_id: shooterId }),
-        confirmKill: () =>
-          sendToDevice(ip, { op: OpCode.KILL_CONFIRMED, type: 'kill_confirmed' }),
+        confirmKill: () => sendToDevice(ip, { op: OpCode.KILL_CONFIRMED, type: 'kill_confirmed' }),
         playRemoteSound: (soundId) =>
           sendToDevice(ip, { op: OpCode.REMOTE_SOUND, type: 'remote_sound', sound_id: soundId }),
       }

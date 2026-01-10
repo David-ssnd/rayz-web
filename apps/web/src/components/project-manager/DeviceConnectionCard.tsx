@@ -22,7 +22,6 @@ import { initialDeviceState, useDevice, useDeviceConnections } from '@/lib/webso
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input' // added Input
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input' // added Input
+
 import {
   Select,
   SelectContent,
@@ -111,10 +112,6 @@ export function DeviceConnectionCard({
     }
   }, [isConnected, isAssigned, assignedPlayer, playerTeam]) // eslint-disable-line react-hooks/exhaustive-deps
 
-const DeviceConnectionCard = ({
-// ... 
-}: DeviceConnectionCardProps) => { // (No functional change here just marking position)
-// ...
   const handleUpdateConfig = () => {
     setConfigStatus('idle')
     setConfigMessage('')
@@ -283,7 +280,7 @@ const DeviceConnectionCard = ({
                 placeholder="Enter device name"
               />
             </div>
-            
+
             {!isAssigned && (
               <div className="grid gap-1.5">
                 <label className="text-xs font-medium">Manual Team Override</label>
@@ -337,7 +334,12 @@ const DeviceConnectionCard = ({
               </div>
             )}
             <div className="flex gap-1">
-              <Button size="sm" className="h-7 text-xs flex-1" onClick={handleUpdateConfig} disabled={isPending}>
+              <Button
+                size="sm"
+                className="h-7 text-xs flex-1"
+                onClick={handleUpdateConfig}
+                disabled={isPending}
+              >
                 Apply
               </Button>
               <Button
