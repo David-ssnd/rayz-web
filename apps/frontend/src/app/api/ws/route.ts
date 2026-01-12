@@ -2,13 +2,13 @@ import { NextRequest } from 'next/server'
 
 /**
  * WebSocket Proxy Route for ESP32 Device Communication
- * 
+ *
  * NOTE: Vercel Serverless Functions do NOT support persistent WebSocket connections.
  * This route is intended for:
  * 1. Local development with Next.js dev server
  * 2. Self-hosted Next.js deployment
  * 3. Providers that support Node.js WebSocket upgrades (e.g., Railway, Render, etc.)
- * 
+ *
  * For production Vercel deployment, use a separate WebSocket bridge server
  * or cloud-hosted solution (AWS API Gateway, Azure Web PubSub, etc.)
  */
@@ -49,24 +49,24 @@ export async function GET(request: NextRequest) {
   try {
     // NOTE: This endpoint is NOT compatible with Vercel's serverless environment
     // Vercel does not support WebSocket upgrades in stateless functions
-    // 
+    //
     // For Vercel + WebSocket support, use one of:
     // 1. Separate WebSocket bridge server (recommended)
     // 2. Client-side direct connection to WS bridge
     // 3. Cloud WebSocket services (AWS API Gateway, Azure Web PubSub)
-    
+
     // If you're running locally or on a compatible host, implement WebSocket logic here
     // Otherwise, return an error guiding users to the bridge
-    
+
     return new Response(
       JSON.stringify({
         error: 'WebSocket not supported on serverless platform',
         message: 'Use a separate WebSocket bridge or connect directly to device on local network',
-        docs: 'See CONTRIBUTING.md for WebSocket setup instructions'
+        docs: 'See CONTRIBUTING.md for WebSocket setup instructions',
       }),
       {
         status: 503,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     )
   } catch (error) {
@@ -74,13 +74,12 @@ export async function GET(request: NextRequest) {
     return new Response(
       JSON.stringify({
         error: 'Failed to establish WebSocket connection',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     )
   }
 }
-
