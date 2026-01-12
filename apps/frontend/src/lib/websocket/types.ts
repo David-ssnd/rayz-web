@@ -1,7 +1,5 @@
 // Re-export from the shared types package instead of duplicating here
 export type {
-  OpCode,
-  GameCommandType,
   ConnectionState,
   DeviceRole,
   GameState,
