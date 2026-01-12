@@ -1,4 +1,4 @@
-export type { User, Profile, Target, Weapon } from '@rayz/database'
+export type { User, Profile } from '@rayz/database'
 
 // WebSocket Protocol Types
 export {
