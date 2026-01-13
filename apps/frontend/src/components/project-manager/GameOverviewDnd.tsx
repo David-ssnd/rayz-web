@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useCallback, useMemo, useOptimistic, useState, useTransition } from 'react'
 import {
   reorderPlayers,
   reorderTeams,
@@ -38,9 +38,7 @@ import {
   Gamepad2,
   GripVertical,
   Monitor,
-  Pause,
   Play,
-  Plus,
   RotateCcw,
   Shield,
   Square,
@@ -81,16 +79,9 @@ const GAME_MODES: { value: WSGameMode; label: string; icon: React.ReactNode }[] 
   { value: 'timed', label: 'Timed Match', icon: <Activity className="w-4 h-4" /> },
 ]
 
-// Types for drag-and-drop
 type DraggableType = 'team' | 'player' | 'device'
-type DraggableItem = {
-  type: DraggableType
-  id: string
-  data: Team | Player | Device
-  containerId?: string // For players: teamId, for devices: playerId
-}
 
-// ==================== DROPPABLE COMPONENTS ====================
+// ==================== DROPPABLE ZONE ====================
 
 function DroppableZone({
   id,
@@ -102,18 +93,149 @@ function DroppableZone({
   className?: string
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
-
   return (
     <div
       ref={setNodeRef}
-      className={cn(className, isOver && 'ring-2 ring-primary ring-offset-2')}
+      className={cn(className, 'transition-colors duration-100', isOver && 'bg-accent/30')}
     >
       {children}
     </div>
   )
 }
 
-// ==================== SORTABLE COMPONENTS ====================
+// ==================== DEVICE PREVIEW ====================
+
+function DevicePreview({
+  device,
+  getDeviceConnectionState,
+}: {
+  device: Device
+  getDeviceConnectionState: (ipAddress: string) => string
+}) {
+  const isOnline = getDeviceConnectionState(device.ipAddress) === 'connected'
+  return (
+    <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-background border text-xs">
+      {isOnline ? (
+        <Wifi className="w-3 h-3 text-emerald-500" />
+      ) : (
+        <WifiOff className="w-3 h-3 text-muted-foreground" />
+      )}
+      <Monitor className="w-3 h-3" />
+      <span className="truncate max-w-20">{device.name || device.ipAddress}</span>
+    </div>
+  )
+}
+
+// ==================== SORTABLE DEVICE ====================
+
+function SortableDevice({
+  device,
+  getDeviceConnectionState,
+}: {
+  device: Device
+  getDeviceConnectionState: (ipAddress: string) => string
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `device-${device.id}`,
+    data: { type: 'device', device },
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  const isOnline = getDeviceConnectionState(device.ipAddress) === 'connected'
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        'flex items-center gap-1 px-2 py-1 rounded-md bg-background border text-xs cursor-grab',
+        isDragging && 'opacity-50'
+      )}
+    >
+      {isOnline ? (
+        <Wifi className="w-3 h-3 text-emerald-500" />
+      ) : (
+        <WifiOff className="w-3 h-3 text-muted-foreground" />
+      )}
+      <Monitor className="w-3 h-3" />
+      <span className="truncate max-w-24">{device.name || device.ipAddress}</span>
+    </div>
+  )
+}
+
+// ==================== SORTABLE PLAYER ====================
+
+function SortablePlayer({
+  player,
+  teamColor,
+  devices,
+  getDeviceConnectionState,
+}: {
+  player: Player
+  teamColor?: string
+  devices: Device[]
+  getDeviceConnectionState: (ipAddress: string) => string
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `player-${player.id}`,
+    data: { type: 'player', player },
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'flex flex-col gap-1 p-2 rounded bg-muted/30 border',
+        isDragging && 'opacity-50'
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <button {...attributes} {...listeners} className="cursor-grab touch-none">
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <Gamepad2 className="w-4 h-4" style={{ color: teamColor }} />
+        <span className="font-medium">{player.name}</span>
+        <Badge variant="outline" className="text-xs">
+          ID: {player.number}
+        </Badge>
+      </div>
+
+      {/* Devices droppable area */}
+      <SortableContext
+        items={devices.map((d) => `device-${d.id}`)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="ml-6 flex flex-wrap gap-1 min-h-6">
+          {devices.length > 0 ? (
+            devices.map((device) => (
+              <SortableDevice
+                key={device.id}
+                device={device}
+                getDeviceConnectionState={getDeviceConnectionState}
+              />
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground italic">Drop devices here</span>
+          )}
+        </div>
+      </SortableContext>
+    </div>
+  )
+}
+
+// ==================== SORTABLE TEAM ====================
 
 function SortableTeam({
   team,
@@ -202,114 +324,6 @@ function SortableTeam({
           </div>
         </SortableContext>
       )}
-    </div>
-  )
-}
-
-function SortablePlayer({
-  player,
-  teamColor,
-  devices,
-  getDeviceConnectionState,
-}: {
-  player: Player
-  teamColor?: string
-  devices: Device[]
-  getDeviceConnectionState: (ipAddress: string) => string
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: `player-${player.id}`,
-    data: { type: 'player', player },
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'flex flex-col gap-1 p-2 rounded bg-muted/30 border',
-        isDragging && 'opacity-50'
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <button {...attributes} {...listeners} className="cursor-grab touch-none">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <Gamepad2 className="w-4 h-4" style={{ color: teamColor }} />
-        <span className="font-medium">{player.name}</span>
-        <Badge variant="outline" className="text-xs">
-          ID: {player.number}
-        </Badge>
-      </div>
-
-      {/* Devices droppable area */}
-      <SortableContext
-        items={devices.map((d) => `device-${d.id}`)}
-        strategy={verticalListSortingStrategy}
-      >
-        <DroppableZone
-          id={`player-devices-${player.id}`}
-          className="ml-6 flex flex-wrap gap-1 min-h-6 p-1 rounded"
-        >
-          {devices.length > 0 ? (
-            devices.map((device) => (
-              <SortableDevice
-                key={device.id}
-                device={device}
-                getDeviceConnectionState={getDeviceConnectionState}
-              />
-            ))
-          ) : (
-            <span className="text-xs text-muted-foreground italic">Drop devices here</span>
-          )}
-        </DroppableZone>
-      </SortableContext>
-    </div>
-  )
-}
-
-function SortableDevice({
-  device,
-  getDeviceConnectionState,
-}: {
-  device: Device
-  getDeviceConnectionState: (ipAddress: string) => string
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: `device-${device.id}`,
-    data: { type: 'device', device },
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  const isOnline = getDeviceConnectionState(device.ipAddress) === 'connected'
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        'flex items-center gap-1 px-2 py-1 rounded-md bg-background border text-xs cursor-grab',
-        isDragging && 'opacity-50'
-      )}
-    >
-      {isOnline ? (
-        <Wifi className="w-3 h-3 text-green-500" />
-      ) : (
-        <WifiOff className="w-3 h-3 text-muted-foreground" />
-      )}
-      <Monitor className="w-3 h-3" />
-      <span className="truncate max-w-24">{device.name || device.ipAddress}</span>
     </div>
   )
 }
@@ -461,11 +475,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
 
         // Determine target player
         let targetPlayerId: string | null = null
-        if (overId.startsWith('player-devices-')) {
-          // Dropped on player's device zone
-          targetPlayerId = overId.replace('player-devices-', '')
-        } else if (overId.startsWith('player-')) {
-          // Dropped on player directly
+        if (overId.startsWith('player-')) {
           targetPlayerId = overId.replace('player-', '')
         } else if (overId.startsWith('device-')) {
           const overDeviceId = overId.replace('device-', '')
@@ -475,28 +485,23 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
           targetPlayerId = null
         }
 
-        // Update device assignment - handle all cases
-        const currentPlayerId = device.assignedPlayerId || null
-
-        if (currentPlayerId !== targetPlayerId) {
-          // Remove from current player first (if assigned)
-          if (currentPlayerId) {
-            const currentPlayer = project.players?.find((p) => p.id === currentPlayerId)
-            if (currentPlayer) {
-              const newDevices = getDevicesForPlayer(currentPlayer)
-                .filter((d) => d.id !== deviceId)
-                .map((d) => d.id)
-              await updatePlayerDevices(currentPlayerId, newDevices)
-            }
-          }
-
-          // Add to new player (if not unassigning)
+        // Update device assignment
+        if (device.assignedPlayerId !== targetPlayerId) {
           if (targetPlayerId) {
-            const targetPlayer = project.players?.find((p) => p.id === targetPlayerId)
-            if (targetPlayer) {
-              const currentDevices = getDevicesForPlayer(targetPlayer).map((d) => d.id)
-              if (!currentDevices.includes(deviceId)) {
-                await updatePlayerDevices(targetPlayerId, [...currentDevices, deviceId])
+            const player = project.players?.find((p) => p.id === targetPlayerId)
+            if (player) {
+              const currentDevices = getDevicesForPlayer(player).map((d) => d.id)
+              await updatePlayerDevices(targetPlayerId, [...currentDevices, deviceId])
+            }
+          } else {
+            // Remove from current player
+            if (device.assignedPlayerId) {
+              const currentPlayer = project.players?.find((p) => p.id === device.assignedPlayerId)
+              if (currentPlayer) {
+                const newDevices = getDevicesForPlayer(currentPlayer)
+                  .filter((d) => d.id !== deviceId)
+                  .map((d) => d.id)
+                await updatePlayerDevices(device.assignedPlayerId, newDevices)
               }
             }
           }
