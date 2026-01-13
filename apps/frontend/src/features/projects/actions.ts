@@ -29,14 +29,21 @@ export async function getProjects() {
     where: { userId: session.user.id },
     include: {
       gameMode: true,
-      teams: true,
+      teams: {
+        orderBy: { order: 'asc' },
+      },
       players: {
+        orderBy: { order: 'asc' },
         include: {
           team: true,
-          devices: true,
+          devices: {
+            orderBy: { order: 'asc' },
+          },
         },
       },
-      devices: true,
+      devices: {
+        orderBy: { order: 'asc' },
+      },
     },
     orderBy: { updatedAt: 'desc' },
   })
@@ -470,5 +477,82 @@ export async function removeDeviceFromProject(deviceId: string) {
     return { success: true }
   } catch (error) {
     return { error: 'Failed to remove device from project' }
+  }
+}
+
+// --- Reordering ---
+
+export async function reorderTeams(projectId: string, teamIds: string[]) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Unauthorized' }
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId, userId: session.user.id },
+    })
+    if (!project) return { error: 'Project not found' }
+
+    await prisma.$transaction(
+      teamIds.map((id, index) =>
+        prisma.team.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    )
+    revalidatePath('/control')
+    return { success: true }
+  } catch (error) {
+    return { error: 'Failed to reorder teams' }
+  }
+}
+
+export async function reorderPlayers(projectId: string, playerIds: string[]) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Unauthorized' }
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId, userId: session.user.id },
+    })
+    if (!project) return { error: 'Project not found' }
+
+    await prisma.$transaction(
+      playerIds.map((id, index) =>
+        prisma.player.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    )
+    revalidatePath('/control')
+    return { success: true }
+  } catch (error) {
+    return { error: 'Failed to reorder players' }
+  }
+}
+
+export async function reorderDevices(projectId: string, deviceIds: string[]) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Unauthorized' }
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId, userId: session.user.id },
+    })
+    if (!project) return { error: 'Project not found' }
+
+    await prisma.$transaction(
+      deviceIds.map((id, index) =>
+        prisma.device.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    )
+    revalidatePath('/control')
+    return { success: true }
+  } catch (error) {
+    return { error: 'Failed to reorder devices' }
   }
 }

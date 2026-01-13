@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { GameModeManager } from './project-manager/GameModeManager'
-import { GameOverview } from './project-manager/GameOverview'
+import { GameOverview } from './project-manager/GameOverviewDnd'
 import { PlayerManager } from './project-manager/PlayerManager'
 import { ProjectDeviceManager } from './project-manager/ProjectDeviceManager'
 import { ProjectSettingsManager } from './project-manager/ProjectSettingsManager'
@@ -242,7 +242,7 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                   </TabsList>
 
                   <TabsContent value="overview" className="mt-4">
-                    <GameOverview project={selectedProject} />
+                    <GameOverview project={selectedProject} availableDevices={availableDevices} />
                   </TabsContent>
 
                   <TabsContent value="gamemode" className="mt-4">
