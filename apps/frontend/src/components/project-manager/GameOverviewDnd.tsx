@@ -17,6 +17,7 @@ import {
   KeyboardSensor,
   PointerSensor,
   UniqueIdentifier,
+  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
@@ -87,6 +88,29 @@ type DraggableItem = {
   id: string
   data: Team | Player | Device
   containerId?: string // For players: teamId, for devices: playerId
+}
+
+// ==================== DROPPABLE COMPONENTS ====================
+
+function DroppableZone({
+  id,
+  children,
+  className,
+}: {
+  id: string
+  children: React.ReactNode
+  className?: string
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(className, isOver && 'ring-2 ring-primary ring-offset-2')}
+    >
+      {children}
+    </div>
+  )
 }
 
 // ==================== SORTABLE COMPONENTS ====================
@@ -228,7 +252,10 @@ function SortablePlayer({
         items={devices.map((d) => `device-${d.id}`)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="ml-6 flex flex-wrap gap-1 min-h-6">
+        <DroppableZone
+          id={`player-devices-${player.id}`}
+          className="ml-6 flex flex-wrap gap-1 min-h-6 p-1 rounded"
+        >
           {devices.length > 0 ? (
             devices.map((device) => (
               <SortableDevice
@@ -240,7 +267,7 @@ function SortablePlayer({
           ) : (
             <span className="text-xs text-muted-foreground italic">Drop devices here</span>
           )}
-        </div>
+        </DroppableZone>
       </SortableContext>
     </div>
   )
@@ -434,7 +461,11 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
 
         // Determine target player
         let targetPlayerId: string | null = null
-        if (overId.startsWith('player-')) {
+        if (overId.startsWith('player-devices-')) {
+          // Dropped on player's device zone
+          targetPlayerId = overId.replace('player-devices-', '')
+        } else if (overId.startsWith('player-')) {
+          // Dropped on player directly
           targetPlayerId = overId.replace('player-', '')
         } else if (overId.startsWith('device-')) {
           const overDeviceId = overId.replace('device-', '')
@@ -444,23 +475,28 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
           targetPlayerId = null
         }
 
-        // Update device assignment
-        if (device.assignedPlayerId !== targetPlayerId) {
-          if (targetPlayerId) {
-            const player = project.players?.find((p) => p.id === targetPlayerId)
-            if (player) {
-              const currentDevices = getDevicesForPlayer(player).map((d) => d.id)
-              await updatePlayerDevices(targetPlayerId, [...currentDevices, deviceId])
+        // Update device assignment - handle all cases
+        const currentPlayerId = device.assignedPlayerId || null
+
+        if (currentPlayerId !== targetPlayerId) {
+          // Remove from current player first (if assigned)
+          if (currentPlayerId) {
+            const currentPlayer = project.players?.find((p) => p.id === currentPlayerId)
+            if (currentPlayer) {
+              const newDevices = getDevicesForPlayer(currentPlayer)
+                .filter((d) => d.id !== deviceId)
+                .map((d) => d.id)
+              await updatePlayerDevices(currentPlayerId, newDevices)
             }
-          } else {
-            // Remove from current player
-            if (device.assignedPlayerId) {
-              const currentPlayer = project.players?.find((p) => p.id === device.assignedPlayerId)
-              if (currentPlayer) {
-                const newDevices = getDevicesForPlayer(currentPlayer)
-                  .filter((d) => d.id !== deviceId)
-                  .map((d) => d.id)
-                await updatePlayerDevices(device.assignedPlayerId, newDevices)
+          }
+
+          // Add to new player (if not unassigning)
+          if (targetPlayerId) {
+            const targetPlayer = project.players?.find((p) => p.id === targetPlayerId)
+            if (targetPlayer) {
+              const currentDevices = getDevicesForPlayer(targetPlayer).map((d) => d.id)
+              if (!currentDevices.includes(deviceId)) {
+                await updatePlayerDevices(targetPlayerId, [...currentDevices, deviceId])
               }
             }
           }
@@ -694,7 +730,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
                 items={playersWithoutTeam.map((p) => `player-${p.id}`)}
                 strategy={verticalListSortingStrategy}
               >
-                <div
+                <DroppableZone
                   id="unassigned-players"
                   className={cn(
                     'min-h-[80px] p-2 rounded border-2 border-dashed',
@@ -717,7 +753,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
                       Drop players here
                     </div>
                   )}
-                </div>
+                </DroppableZone>
               </SortableContext>
             </div>
 
@@ -731,7 +767,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
                 items={unassignedDevices.map((d) => `device-${d.id}`)}
                 strategy={verticalListSortingStrategy}
               >
-                <div
+                <DroppableZone
                   id="unassigned-devices"
                   className={cn(
                     'min-h-[60px] p-2 rounded border-2 border-dashed flex flex-wrap gap-1',
@@ -751,7 +787,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
                       Drop devices here
                     </div>
                   )}
-                </div>
+                </DroppableZone>
               </SortableContext>
             </div>
           </div>
