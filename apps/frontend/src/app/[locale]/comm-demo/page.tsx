@@ -210,7 +210,8 @@ function CommDemoContent() {
             )}
           </CardContent>
         </Card>
-      </div>shadow-md hover:shadow-lg transition-shadow">
+      </div>
+      <Card className="shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-3 pt-4">
           <CardTitle className="text-base font-bold">Message Log</CardTitle>
           <CardDescription className="text-xs">Real-time device communications</CardDescription>
@@ -224,13 +225,12 @@ function CommDemoContent() {
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground text-center py-4 text-sm">Waiting for messages
-              ))
-            ) : (
               <p className="text-muted-foreground text-center py-2">Waiting…</p>
             )}
           </div>
-        </CardContent>shadow-md hover:shadow-lg transition-shadow">
+        </CardContent>
+      </Card>
+      <Card className="shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-3 pt-4">
           <CardTitle className="text-base font-bold">Active Features</CardTitle>
           <CardDescription className="text-xs">Enabled feature flags</CardDescription>
