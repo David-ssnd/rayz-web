@@ -7,18 +7,16 @@
  * This is a higher-level abstraction over the device connections that
  * automatically selects the appropriate communication backend.
  */
-
 import {
   createContext,
-  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react'
-
 import type { ClientMessage, ServerMessage } from '@rayz/types'
 
 import { createGameComm, type CommConnectionState, type GameComm } from './index'

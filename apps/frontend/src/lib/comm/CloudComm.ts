@@ -6,6 +6,7 @@
  */
 
 import type { ClientMessage, ServerMessage } from '@rayz/types'
+
 import type { CloudCommConfig, CommConnectionState, GameComm } from './types'
 
 // Ably types (minimal for this implementation)

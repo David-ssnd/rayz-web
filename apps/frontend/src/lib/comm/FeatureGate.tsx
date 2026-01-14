@@ -5,10 +5,10 @@
  *
  * React components for conditionally rendering features based on app mode.
  */
-
 import { type ReactNode } from 'react'
+
+import { isFeatureEnabled, type FeatureFlags } from './features'
 import { getAppMode, isCloudMode, isLocalMode } from './mode'
-import { type FeatureFlags, isFeatureEnabled } from './features'
 
 interface FeatureGateProps {
   children: ReactNode
@@ -79,11 +79,7 @@ export function ModeIndicator({ className }: { className?: string }): ReactNode 
   const mode = getAppMode()
 
   return (
-    <span
-      className={className}
-      data-mode={mode}
-      title={`Running in ${mode} mode`}
-    >
+    <span className={className} data-mode={mode} title={`Running in ${mode} mode`}>
       {mode === 'cloud' ? '☁️ Cloud' : '🏠 Local'}
     </span>
   )

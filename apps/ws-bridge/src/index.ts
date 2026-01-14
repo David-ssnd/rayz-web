@@ -10,8 +10,8 @@
  * - Server sends: { source: "192.168.x.x", payload: {...} }
  */
 
-import { WebSocket, WebSocketServer } from 'ws'
 import type { IncomingMessage } from 'http'
+import { WebSocket, WebSocketServer } from 'ws'
 
 // Configuration
 const PORT = parseInt(process.env.WS_BRIDGE_PORT ?? '8080', 10)

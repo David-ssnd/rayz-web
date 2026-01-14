@@ -86,8 +86,7 @@ export function isCloudMode(): boolean {
  */
 export function getLocalWsUrl(): string {
   // Check environment variables
-  const envUrl =
-    process.env.NEXT_PUBLIC_LOCAL_WS_URL || process.env.NEXT_PUBLIC_WS_BRIDGE_URL
+  const envUrl = process.env.NEXT_PUBLIC_LOCAL_WS_URL || process.env.NEXT_PUBLIC_WS_BRIDGE_URL
 
   if (envUrl) {
     return envUrl

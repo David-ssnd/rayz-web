@@ -6,6 +6,7 @@
  */
 
 import type { ClientMessage, ServerMessage } from '@rayz/types'
+
 import type { CommConnectionState, GameComm, LocalCommConfig } from './types'
 
 const DEFAULT_CONFIG: Required<LocalCommConfig> = {

@@ -5,6 +5,7 @@ This document describes the dual-mode communication system that allows RayZ to w
 ## Overview
 
 The app automatically detects which mode to use based on:
+
 1. Environment variable `NEXT_PUBLIC_MODE` (explicit override)
 2. Runtime detection (Electron, Tauri, localhost vs cloud domain)
 
@@ -91,7 +92,7 @@ function GameUI() {
 ### Feature Gating
 
 ```tsx
-import { CloudOnly, LocalOnly, Feature } from '@/lib/comm'
+import { CloudOnly, Feature, LocalOnly } from '@/lib/comm'
 
 function Dashboard() {
   return (
@@ -124,7 +125,7 @@ function Dashboard() {
 ### Mode Detection
 
 ```tsx
-import { useAppMode, isCloudMode, isLocalMode } from '@/lib/comm'
+import { isCloudMode, isLocalMode, useAppMode } from '@/lib/comm'
 
 function MyComponent() {
   const { mode, isCloud, isLocal } = useAppMode()
@@ -140,13 +141,13 @@ if (isCloudMode()) {
 
 ## Environment Variables
 
-| Variable | Description | Values |
-|----------|-------------|--------|
-| `NEXT_PUBLIC_MODE` | Force specific mode | `local` \| `cloud` |
-| `NEXT_PUBLIC_LOCAL_WS_URL` | Local WS server URL | `ws://localhost:8080` |
-| `NEXT_PUBLIC_WS_BRIDGE_URL` | WS bridge URL (legacy) | `ws://...` |
-| `NEXT_PUBLIC_ABLY_API_KEY` | Ably API key (dev only) | `xxxxx:yyyyy` |
-| `NEXT_PUBLIC_ABLY_TOKEN_URL` | Ably token endpoint | `/api/ably/token` |
+| Variable                     | Description             | Values                |
+| ---------------------------- | ----------------------- | --------------------- |
+| `NEXT_PUBLIC_MODE`           | Force specific mode     | `local` \| `cloud`    |
+| `NEXT_PUBLIC_LOCAL_WS_URL`   | Local WS server URL     | `ws://localhost:8080` |
+| `NEXT_PUBLIC_WS_BRIDGE_URL`  | WS bridge URL (legacy)  | `ws://...`            |
+| `NEXT_PUBLIC_ABLY_API_KEY`   | Ably API key (dev only) | `xxxxx:yyyyy`         |
+| `NEXT_PUBLIC_ABLY_TOKEN_URL` | Ably token endpoint     | `/api/ably/token`     |
 
 ## Local Mode Setup
 
@@ -188,6 +189,7 @@ ESP32 devices connect directly to the bridge server:
 For a downloadable local app, you can:
 
 1. **Static Export + Node Server**
+
    ```bash
    cd apps/frontend
    pnpm build
@@ -222,8 +224,8 @@ NEXT_PUBLIC_ABLY_TOKEN_URL=/api/ably/token  # For production
 
 ```ts
 // app/api/ably/token/route.ts
-import Ably from 'ably'
 import { NextResponse } from 'next/server'
+import Ably from 'ably'
 
 const ably = new Ably.Rest(process.env.ABLY_API_KEY!)
 
@@ -261,7 +263,7 @@ void setup() {
   // Connect to Ably MQTT
   client.setServer(mqtt_server, mqtt_port);
   client.connect("esp32-device-id", mqtt_user, mqtt_pass);
-  
+
   // Subscribe to commands
   client.subscribe("rayz-game:session:devices");
 }
@@ -334,28 +336,30 @@ For cloud mode, messages are wrapped:
 ```json
 {
   "source": "device-ip-or-id",
-  "payload": { /* actual message */ }
+  "payload": {
+    /* actual message */
+  }
 }
 ```
 
 ## Feature Flags Reference
 
-| Feature | Local | Cloud | Description |
-|---------|-------|-------|-------------|
-| `gameControl` | ✅ | ✅ | Start/stop/reset games |
-| `deviceManagement` | ✅ | ✅ | Add/remove devices |
-| `teamSetup` | ✅ | ✅ | Configure teams |
-| `gameRules` | ✅ | ✅ | Set game rules |
-| `leaderboards` | ❌ | ✅ | Global rankings |
-| `globalStats` | ❌ | ✅ | Cross-game statistics |
-| `adminDashboard` | ❌ | ✅ | Admin controls |
-| `userAccounts` | ❌ | ✅ | User authentication |
-| `matchHistory` | ❌ | ✅ | Past game records |
-| `achievements` | ❌ | ✅ | Achievement system |
-| `cloudBackup` | ❌ | ✅ | Cloud data sync |
-| `directDeviceConnection` | ✅ | ❌ | Direct WS to ESP32 |
-| `offlinePlay` | ✅ | ❌ | No internet required |
-| `localServerControl` | ✅ | ❌ | Manage local server |
+| Feature                  | Local | Cloud | Description            |
+| ------------------------ | ----- | ----- | ---------------------- |
+| `gameControl`            | ✅    | ✅    | Start/stop/reset games |
+| `deviceManagement`       | ✅    | ✅    | Add/remove devices     |
+| `teamSetup`              | ✅    | ✅    | Configure teams        |
+| `gameRules`              | ✅    | ✅    | Set game rules         |
+| `leaderboards`           | ❌    | ✅    | Global rankings        |
+| `globalStats`            | ❌    | ✅    | Cross-game statistics  |
+| `adminDashboard`         | ❌    | ✅    | Admin controls         |
+| `userAccounts`           | ❌    | ✅    | User authentication    |
+| `matchHistory`           | ❌    | ✅    | Past game records      |
+| `achievements`           | ❌    | ✅    | Achievement system     |
+| `cloudBackup`            | ❌    | ✅    | Cloud data sync        |
+| `directDeviceConnection` | ✅    | ❌    | Direct WS to ESP32     |
+| `offlinePlay`            | ✅    | ❌    | No internet required   |
+| `localServerControl`     | ✅    | ❌    | Manage local server    |
 
 ## Troubleshooting
 
@@ -381,6 +385,7 @@ ESP32 devices only support `ws://` (unencrypted). When accessing the app over HT
 ### "Mode detection wrong"
 
 Override with environment variable:
+
 ```bash
 NEXT_PUBLIC_MODE=local pnpm dev
 ```

@@ -1,3 +1,13 @@
+// ============= React Hooks =============
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ClientMessage, ServerMessage } from '@rayz/types'
+
+import { CloudComm } from './CloudComm'
+import { LocalComm } from './LocalComm'
+import { getAblyConfig, getAppMode, getLocalWsUrl } from './mode'
+import type { CloudCommConfig, CommConnectionState, GameComm, LocalCommConfig } from './types'
+
 /**
  * Communication Layer
  *
@@ -11,12 +21,14 @@ export * from './features'
 export { LocalComm } from './LocalComm'
 export { CloudComm } from './CloudComm'
 export { GameCommProvider, useGameCommContext, CommModeIndicator } from './GameCommContext'
-export { CloudOnly, LocalOnly, Feature, ModeIndicator, useFeatureFlags, useAppMode } from './FeatureGate'
-
-import { CloudComm } from './CloudComm'
-import { LocalComm } from './LocalComm'
-import { getAblyConfig, getAppMode, getLocalWsUrl } from './mode'
-import type { CloudCommConfig, GameComm, LocalCommConfig } from './types'
+export {
+  CloudOnly,
+  LocalOnly,
+  Feature,
+  ModeIndicator,
+  useFeatureFlags,
+  useAppMode,
+} from './FeatureGate'
 
 /**
  * Create the appropriate GameComm instance based on current mode
@@ -61,12 +73,6 @@ export function createGameComm(
     ...options.cloudConfig,
   })
 }
-
-// ============= React Hooks =============
-
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ClientMessage, ServerMessage } from '@rayz/types'
-import type { CommConnectionState } from './types'
 
 /**
  * React hook for using GameComm

@@ -14,10 +14,7 @@ export async function GET(request: Request) {
   const apiKey = process.env.ABLY_API_KEY
 
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Ably API key not configured' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ably API key not configured' }, { status: 500 })
   }
 
   try {
@@ -45,9 +42,6 @@ export async function GET(request: Request) {
     )
   } catch (error) {
     console.error('[Ably Token] Error creating token:', error)
-    return NextResponse.json(
-      { error: 'Failed to create Ably token' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create Ably token' }, { status: 500 })
   }
 }

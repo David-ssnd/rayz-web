@@ -6,8 +6,8 @@
  * Wraps the ProjectManager with the appropriate communication provider
  * based on the current app mode (local vs cloud).
  */
-
 import { type ReactNode } from 'react'
+
 import {
   CloudOnly,
   CommModeIndicator,
@@ -57,11 +57,7 @@ export function ModeAwareConnectionProvider({
 
   // Cloud mode: Use GameCommProvider with Ably
   return (
-    <GameCommProvider
-      mode="cloud"
-      sessionId={sessionId ?? projectId}
-      autoConnect={true}
-    >
+    <GameCommProvider mode="cloud" sessionId={sessionId ?? projectId} autoConnect={true}>
       {children}
     </GameCommProvider>
   )
@@ -75,7 +71,9 @@ export function ModeStatusBar({ className }: { className?: string }) {
   const features = useFeatureFlags()
 
   return (
-    <div className={`flex items-center justify-between p-2 bg-muted/50 rounded-lg ${className ?? ''}`}>
+    <div
+      className={`flex items-center justify-between p-2 bg-muted/50 rounded-lg ${className ?? ''}`}
+    >
       <CommModeIndicator />
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <CloudOnly>
@@ -147,9 +145,7 @@ export function MatchHistoryWidget() {
     >
       <div className="p-4 border rounded-lg">
         <h3 className="font-semibold mb-2">📊 Match History</h3>
-        <p className="text-sm text-muted-foreground">
-          Match history would load here from cloud...
-        </p>
+        <p className="text-sm text-muted-foreground">Match history would load here from cloud...</p>
       </div>
     </CloudOnly>
   )

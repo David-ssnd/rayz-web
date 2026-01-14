@@ -53,6 +53,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ### Browser → Bridge
 
 **Add a device to manage:**
+
 ```json
 {
   "type": "add_device",
@@ -61,6 +62,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Remove a device:**
+
 ```json
 {
   "type": "remove_device",
@@ -69,6 +71,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Send to specific device:**
+
 ```json
 {
   "target": "192.168.1.100",
@@ -81,6 +84,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Broadcast to all devices:**
+
 ```json
 {
   "broadcast": true,
@@ -95,6 +99,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ### Bridge → Browser
 
 **Device list on connect:**
+
 ```json
 {
   "type": "device_list",
@@ -106,6 +111,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Device connected:**
+
 ```json
 {
   "type": "device_connected",
@@ -114,6 +120,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Device disconnected:**
+
 ```json
 {
   "type": "device_disconnected",
@@ -122,6 +129,7 @@ WS_BRIDGE_PORT=9000 pnpm dev
 ```
 
 **Message from device:**
+
 ```json
 {
   "source": "192.168.1.100",
@@ -157,11 +165,9 @@ const path = require('path')
 let bridgeProcess
 
 function startBridge() {
-  bridgeProcess = fork(
-    path.join(__dirname, 'ws-bridge/dist/index.js'),
-    [],
-    { env: { ...process.env, WS_BRIDGE_PORT: '8080' } }
-  )
+  bridgeProcess = fork(path.join(__dirname, 'ws-bridge/dist/index.js'), [], {
+    env: { ...process.env, WS_BRIDGE_PORT: '8080' },
+  })
 }
 
 app.on('ready', () => {
@@ -209,9 +215,9 @@ fn main() {
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WS_BRIDGE_PORT` | `8080` | Port for the WebSocket server |
+| Variable         | Default | Description                   |
+| ---------------- | ------- | ----------------------------- |
+| `WS_BRIDGE_PORT` | `8080`  | Port for the WebSocket server |
 
 ## Troubleshooting
 
