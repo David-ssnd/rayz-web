@@ -4,7 +4,7 @@ import { getGameModes, getProjects } from '@/features/projects/actions'
 import { getTranslations } from 'next-intl/server'
 
 import { PageLayout } from '@/components/PageLayout'
-import { ProjectManager } from '@/components/ProjectManager'
+import { ProjectManagerClient } from '@/components/ProjectManagerClient'
 
 export async function generateMetadata({
   params,
@@ -34,7 +34,7 @@ export default async function ControlPanelPage({
 
   return (
     <PageLayout title={t('title')} description={t('description')}>
-      <ProjectManager projects={projects} availableDevices={devices} gameModes={gameModes} />
+      <ProjectManagerClient projects={projects} availableDevices={devices} gameModes={gameModes} />
     </PageLayout>
   )
 }

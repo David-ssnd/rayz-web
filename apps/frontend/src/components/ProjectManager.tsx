@@ -9,6 +9,7 @@ import {
   Gamepad2,
   LayoutDashboard,
   Monitor,
+  Plug,
   Plus,
   Settings,
   Settings2,
@@ -143,8 +144,8 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
             sessionId={selectedProject.id}
           >
             <Card>
-              <div className="flex flex-start">
-                <CardHeader>
+              <div className="flex items-center justify-between px-4 py-0 relative">
+                <div>
                   <Button
                     variant="ghost"
                     className="px-0 py-0 text-left text-lg sm:text-xl font-semibold flex items-center gap-2"
@@ -194,11 +195,15 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                       </div>
                     </div>
                   )}
-
-                  <CardDescription className="text-xs sm:text-sm mt-1 pl-3">
-                    {selectedProject?.gameMode?.name || 'Standard'}
-                  </CardDescription>
-                </CardHeader>
+                </div>
+                <div className="text-xs sm:text-sm mt-1 pl-3">
+                  <Button variant="link" size="sm" asChild>
+                    <a href="/ws-demo">
+                      Test WS
+                      <Plug />
+                    </a>
+                  </Button>
+                </div>
               </div>
               <CardContent>
                 <Tabs defaultValue="overview">

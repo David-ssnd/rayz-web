@@ -291,6 +291,10 @@ export class CloudComm implements GameComm {
         payload: ServerMessage
       }
 
+      if (!data || typeof data !== 'object' || !data.source || !data.payload) {
+        return
+      }
+
       const { source: deviceId, payload: message } = data
 
       // Emit to specific device handlers

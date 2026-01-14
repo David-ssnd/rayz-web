@@ -220,12 +220,25 @@ export class LocalComm implements GameComm {
 
   private handleMessage(data: string): void {
     try {
-      const envelope = JSON.parse(data) as {
+      const envelope = JSON.parse(data)
+      if (!envelope || typeof envelope !== 'object') {
+        return
+      }
+
+      // Handle bridge management messages (type without source)
+      if (envelope.type && !envelope.source) {
+        this.handleBridgeMessage(envelope)
+        return
+      }
+
+      const { source: deviceId, payload: message } = envelope as {
         source: string
         payload: ServerMessage
       }
 
-      const { source: deviceId, payload: message } = envelope
+      if (!message || !deviceId) {
+        return
+      }
 
       // Track connected devices
       if (message.type === 'status') {
@@ -251,6 +264,32 @@ export class LocalComm implements GameComm {
       })
     } catch (err) {
       console.error('[LocalComm] Failed to parse message:', err)
+    }
+  }
+
+  private handleBridgeMessage(message: any): void {
+    switch (message.type) {
+      case 'device_connected':
+        if (message.ip) {
+          this.connectedDevices.add(message.ip)
+        }
+        break
+      case 'device_disconnected':
+        if (message.ip) {
+          this.connectedDevices.delete(message.ip)
+        }
+        break
+      case 'device_list':
+        if (Array.isArray(message.devices)) {
+          message.devices.forEach((d: any) => {
+            if (d.connected && d.ip) {
+              this.connectedDevices.add(d.ip)
+            } else if (d.ip) {
+              this.connectedDevices.delete(d.ip)
+            }
+          })
+        }
+        break
     }
   }
 
