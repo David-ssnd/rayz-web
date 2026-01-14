@@ -49,6 +49,11 @@ export default async function ControlPanelPage({
     deaths: 0,
     shots: 0,
     friendlyKills: 0,
+    hitsReceived: 0,
+    hearts: 3,
+    ammo: 0,
+    isRespawning: false,
+    isReloading: false,
   }))
 
   return (
