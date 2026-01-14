@@ -9,6 +9,7 @@ import {
   Gamepad2,
   LayoutDashboard,
   Monitor,
+  Plug,
   Plus,
   Settings,
   Settings2,
@@ -16,9 +17,8 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-import { DeviceConnectionsProvider } from '@/lib/websocket'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import {
   Empty,
   EmptyContent,
@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ModeAwareConnectionProvider, ModeStatusBar } from '@/components/ModeAwareProvider'
 
 import { GameModeManager } from './project-manager/GameModeManager'
 import { GameOverview } from './project-manager/GameOverviewDnd'
@@ -136,15 +137,15 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
         </Card>
       ) : (
         selectedProject && (
-          <DeviceConnectionsProvider
+          <ModeAwareConnectionProvider
             key={selectedProject.id}
-            initialDevices={selectedProject.devices?.map((d: Device) => d.ipAddress) || []}
-            autoConnect={true}
-            autoReconnect={true}
+            projectId={selectedProject.id}
+            devices={selectedProject.devices || []}
+            sessionId={selectedProject.id}
           >
             <Card>
-              <div className="flex flex-start">
-                <CardHeader>
+              <div className="flex items-center justify-between px-4 py-0 relative">
+                <div>
                   <Button
                     variant="ghost"
                     className="px-0 py-0 text-left text-lg sm:text-xl font-semibold flex items-center gap-2"
@@ -194,11 +195,15 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                       </div>
                     </div>
                   )}
-
-                  <CardDescription className="text-xs sm:text-sm mt-1 pl-3">
-                    {selectedProject?.gameMode?.name || 'Standard'}
-                  </CardDescription>
-                </CardHeader>
+                </div>
+                <div className="text-xs sm:text-sm mt-1 pl-3">
+                  <Button variant="link" size="sm" asChild>
+                    <a href="/ws-demo">
+                      Test WS
+                      <Plug />
+                    </a>
+                  </Button>
+                </div>
               </div>
               <CardContent>
                 <Tabs defaultValue="overview">
@@ -280,7 +285,7 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                 </Tabs>
               </CardContent>
             </Card>
-          </DeviceConnectionsProvider>
+          </ModeAwareConnectionProvider>
         )
       )}
     </div>

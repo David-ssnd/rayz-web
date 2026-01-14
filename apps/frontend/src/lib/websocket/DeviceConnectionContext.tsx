@@ -337,7 +337,18 @@ export function DeviceConnectionsProvider({
   const handleMessage = useCallback(
     (ip: string, event: MessageEvent) => {
       try {
-        const message = JSON.parse(event.data) as ServerMessage
+        let message = JSON.parse(event.data)
+
+        // Handle bridge wrapper (unwrap payload if source matches this device)
+        if (message.source && message.payload) {
+          if (message.source !== ip) {
+            // Verify if this is a message for another device.
+            // In bridge mode, we might receive broadcasts for other devices on this socket.
+            // We should ignore them.
+            return
+          }
+          message = message.payload
+        }
 
         switch (message.type) {
           case 'status': {
@@ -454,34 +465,33 @@ export function DeviceConnectionsProvider({
       updateDeviceState(ip, { connectionState: 'connecting', lastError: undefined })
       shouldReconnectRef.current.set(ip, autoReconnect)
 
-      // Determine correct URL based on environment (HTTPS/HTTP)
-      let wsUrl = ''
       const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
       const bridge = bridgeUrlRef.current
+      let wsUrl: string
 
-      if (isHttps) {
-        if (bridge) {
-          wsUrl = `${bridge}?target=${encodeURIComponent(ip)}`
-        } else {
-          // ESP32 devices only support ws:// (unencrypted WebSocket).
-          // Mixed content (ws:// from https://) is blocked by browsers.
-          // A bridge/proxy is required for HTTPS deployments.
-          if (currentRetries === 0) {
-            logWarn(
-              `[WS ${ip}] Cannot connect: HTTPS page cannot connect to ws:// (ESP32 does not support wss://). ` +
-                'Set NEXT_PUBLIC_WS_BRIDGE_URL or access this page over HTTP.'
-            )
-          }
-          // Mark as connecting failed immediately
-          connectingRef.current.delete(ip)
-          updateDeviceState(ip, {
-            connectionState: 'error',
-            lastError: 'HTTPS requires WebSocket bridge (ESP32 only supports ws://)',
-          })
-          shouldReconnectRef.current.set(ip, false)
-          return
+      // In local mode, we should always use the bridge if it's configured,
+      // or fallback to direct connection if it's explicitly disabled/missing.
+      // However, if we're on localhost and NO bridge is set, direct is fine (over http).
+
+      if (bridge) {
+        wsUrl = `${bridge}?target=${encodeURIComponent(ip)}`
+      } else if (isHttps) {
+        // HTTPS always requires bridge for ws:// ESP32s
+        if (currentRetries === 0) {
+          logWarn(
+            `[WS ${ip}] Cannot connect: HTTPS page cannot connect to ws:// (ESP32 does not support wss://). ` +
+              'Set NEXT_PUBLIC_WS_BRIDGE_URL or access this page over HTTP.'
+          )
         }
+        updateDeviceState(ip, {
+          connectionState: 'error',
+          lastError: 'HTTPS requires WebSocket bridge (ESP32 only supports ws://)',
+        })
+        shouldReconnectRef.current.set(ip, false)
+        connectingRef.current.delete(ip)
+        return
       } else {
+        // HTTP localhost or direct IP -> can use direct WebSocket
         wsUrl = `ws://${ip}/ws`
       }
 
