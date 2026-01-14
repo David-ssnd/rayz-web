@@ -1,8 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { GameMode, Project } from '@rayz/database'
-import type { DeviceState } from '@rayz/types'
+import type { Device, GameMode, Project } from '@rayz/database'
 
 // Dynamic import with ssr: false to avoid @dnd-kit hydration mismatch
 const ProjectManager = dynamic(
@@ -14,7 +13,7 @@ const ProjectManager = dynamic(
 
 interface ProjectManagerClientProps {
   projects: Project[]
-  availableDevices: DeviceState[]
+  availableDevices: Device[]
   gameModes: GameMode[]
 }
 
