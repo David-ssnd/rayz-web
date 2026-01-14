@@ -139,7 +139,7 @@ function CommDemoContent() {
             </div>
           </CardContent>
         </Card>
-shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
+        <Card className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
           <CardHeader className="pb-3 pt-4">
             <CardTitle className="flex items-center gap-2 text-base font-bold">
               <Zap className="h-5 w-5 text-purple-500" />
@@ -171,9 +171,7 @@ shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
                 disabled={!isConnected}
                 variant="destructive"
                 size="sm"
-                className="text-xs h-9 font-semibold shadow-sm
-                size="sm"
-                className="text-xs h-8"
+                className="text-xs h-9 font-semibold shadow-sm"
               >
                 Stop
               </Button>
