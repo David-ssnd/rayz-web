@@ -53,16 +53,43 @@ class WsBridge {
 
   private setupServer() {
     this.server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
-      console.log('[WsBridge] Browser client connected')
+      // Parse query params for target
+      const requestUrl = new URL(req.url ?? '', `http://localhost:${PORT}`)
+      const targetIp = requestUrl.searchParams.get('target')
+
+      console.log(`[WsBridge] Browser client connected${targetIp ? ` (target: ${targetIp})` : ''}`)
       this.browserClients.add(ws)
+
+      if (targetIp) {
+        this.addDevice(targetIp)
+      }
 
       // Send current device states
       this.sendDeviceList(ws)
 
       ws.on('message', (data: Buffer) => {
         try {
-          const message = JSON.parse(data.toString()) as BrowserMessage
-          this.handleBrowserMessage(message)
+          const raw = JSON.parse(data.toString())
+
+          // Check if message is already structured as BrowserMessage or is a management command
+          const isStructured =
+            raw.target ||
+            raw.broadcast ||
+            raw.type === 'add_device' ||
+            raw.type === 'remove_device' ||
+            raw.type === 'ping' // Handle explicit ping
+
+          if (isStructured) {
+            this.handleBrowserMessage(raw as BrowserMessage)
+          } else if (targetIp) {
+            // It's a raw payload meant for the target IP declared in connection
+            this.handleBrowserMessage({
+              target: targetIp,
+              payload: raw,
+            })
+          } else {
+            console.warn('[WsBridge] received message without target', raw)
+          }
         } catch (err) {
           console.error('[WsBridge] Failed to parse browser message:', err)
         }

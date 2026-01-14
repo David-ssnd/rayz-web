@@ -16,9 +16,8 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-import { DeviceConnectionsProvider } from '@/lib/websocket'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import {
   Empty,
   EmptyContent,
@@ -29,6 +28,7 @@ import {
 } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ModeAwareConnectionProvider, ModeStatusBar } from '@/components/ModeAwareProvider'
 
 import { GameModeManager } from './project-manager/GameModeManager'
 import { GameOverview } from './project-manager/GameOverviewDnd'
@@ -136,11 +136,11 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
         </Card>
       ) : (
         selectedProject && (
-          <DeviceConnectionsProvider
+          <ModeAwareConnectionProvider
             key={selectedProject.id}
-            initialDevices={selectedProject.devices?.map((d: Device) => d.ipAddress) || []}
-            autoConnect={true}
-            autoReconnect={true}
+            projectId={selectedProject.id}
+            devices={selectedProject.devices || []}
+            sessionId={selectedProject.id}
           >
             <Card>
               <div className="flex flex-start">
@@ -280,7 +280,7 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                 </Tabs>
               </CardContent>
             </Card>
-          </DeviceConnectionsProvider>
+          </ModeAwareConnectionProvider>
         )
       )}
     </div>
