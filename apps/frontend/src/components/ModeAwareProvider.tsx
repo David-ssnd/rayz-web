@@ -39,7 +39,19 @@ export function ModeAwareConnectionProvider({
   devices,
   sessionId,
 }: ModeAwareProviderProps) {
-  const { isLocal, isCloud } = useAppMode()
+  const { isLocal } = useAppMode()
+
+  // Always provide GameCommProvider to support hooks like useGameCommContext/CommModeIndicator
+  // In local mode, it connects to the local bridge; in cloud mode, it connects to Ably.
+  const content = (
+    <GameCommProvider
+      mode={isLocal ? 'local' : 'cloud'}
+      sessionId={sessionId ?? projectId}
+      autoConnect={true}
+    >
+      {children}
+    </GameCommProvider>
+  )
 
   if (isLocal) {
     // Local mode: Use existing DeviceConnectionsProvider with direct WS connections
@@ -50,17 +62,13 @@ export function ModeAwareConnectionProvider({
         autoConnect={true}
         autoReconnect={true}
       >
-        {children}
+        {content}
       </DeviceConnectionsProvider>
     )
   }
 
-  // Cloud mode: Use GameCommProvider with Ably
-  return (
-    <GameCommProvider mode="cloud" sessionId={sessionId ?? projectId} autoConnect={true}>
-      {children}
-    </GameCommProvider>
-  )
+  // Cloud mode: Just the GameCommProvider
+  return content
 }
 
 /**
