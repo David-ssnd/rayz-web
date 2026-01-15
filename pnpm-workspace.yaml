@@ -7,3 +7,6 @@ ignoredBuiltDependencies:
   - '@swc/core'
   - prisma
   - sharp
+
+onlyBuiltDependencies:
+  - esbuild
