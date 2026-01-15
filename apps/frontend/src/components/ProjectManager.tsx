@@ -135,13 +135,13 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
           </Empty>
         </Card>
       ) : (
-        selectedProject && (
-          <DeviceConnectionsProvider
-            key={selectedProject.id}
-            initialDevices={selectedProject.devices?.map((d: Device) => d.ipAddress) || []}
-            autoConnect={true}
-            autoReconnect={true}
-          >
+        <DeviceConnectionsProvider
+          key={selectedProject?.id || 'no-project'}
+          initialDevices={selectedProject?.devices?.map((d: Device) => d.ipAddress) || []}
+          autoConnect={!!selectedProject}
+          autoReconnect={!!selectedProject}
+        >
+          {selectedProject ? (
             <Card>
               <div className="flex flex-start">
                 <CardHeader>
@@ -280,8 +280,8 @@ export function ProjectManager({ projects, availableDevices, gameModes }: Projec
                 </Tabs>
               </CardContent>
             </Card>
-          </DeviceConnectionsProvider>
-        )
+          ) : null}
+        </DeviceConnectionsProvider>
       )}
     </div>
   )
