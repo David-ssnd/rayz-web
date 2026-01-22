@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { addDevice } from '@/features/devices/actions'
 import { addDeviceToProject, removeDeviceFromProject } from '@/features/projects/actions'
-import { AlertCircle, Plus, Trash2 } from 'lucide-react'
+import { AlertCircle, Plus, Trash2, Send, Loader2, CheckCircle2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useDeviceConfig } from '@/hooks/useDeviceConfig'
 
 import { IpAddressInput } from '../IpAddressInput'
 import { DeviceConnectionCard } from './DeviceConnectionCard'
@@ -27,6 +28,7 @@ function ProjectDeviceManagerInner({ project, availableDevices }: ProjectDeviceM
   const [isPending, startTransition] = useTransition()
   const [ipAddress, setIpAddress] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { sendToDevice, getStatus } = useDeviceConfig(project)
 
   // Filter devices that are NOT in this project
   const devicesToAdd = availableDevices.filter((d: Device) => d.projectId !== project.id)
@@ -144,6 +146,7 @@ function ProjectDeviceManagerInner({ project, availableDevices }: ProjectDeviceM
         {project.devices?.map((device: Device) => {
           const assignedPlayer = getAssignedPlayer(device.id)
           const playerTeam = getPlayerTeam(assignedPlayer)
+          const configStatus = getStatus(device.ipAddress || device.id)
 
           return (
             <div key={device.id} className="relative group">
@@ -156,14 +159,33 @@ function ProjectDeviceManagerInner({ project, availableDevices }: ProjectDeviceM
                 teams={project.teams}
                 onRemove={() => handleRemoveDevice(device.id)}
               />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleRemoveDevice(device.id)}
-              >
-                <Trash2 className="w-3 h-3 text-destructive" />
-              </Button>
+              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-6 gap-1 px-2"
+                  onClick={() => sendToDevice(device)}
+                  disabled={configStatus.status === 'sending'}
+                  title="Send configuration to device"
+                >
+                  {configStatus.status === 'sending' ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : configStatus.status === 'success' ? (
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                  <span className="text-xs hidden sm:inline">Config</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => handleRemoveDevice(device.id)}
+                >
+                  <Trash2 className="w-3 h-3 text-destructive" />
+                </Button>
+              </div>
             </div>
           )
         })}

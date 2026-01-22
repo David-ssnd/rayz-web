@@ -63,6 +63,7 @@ export interface ConfigUpdateMessage extends BaseClientMessage {
   reset_to_defaults?: boolean
 
   // Identity
+  device_name?: string
   device_id?: number
   player_id?: number
   team_id?: number // 0=Solo, 255=Admin, 1..N=Teams
@@ -90,6 +91,9 @@ export interface ConfigUpdateMessage extends BaseClientMessage {
 
   // Game Timer
   game_duration_s?: number // 0 = Manual Stop only
+
+  // ESP-NOW Peer Management
+  espnow_peers?: string // Comma-separated MAC addresses "aa:bb:cc:dd:ee:ff,11:22:33:44:55:66"
 }
 
 export interface GameCommandMessage extends BaseClientMessage {
@@ -113,6 +117,41 @@ export interface RemoteSoundMessage extends BaseClientMessage {
   op: OpCode.REMOTE_SOUND
   type: 'remote_sound'
   sound_id: number // 0=Whistle, 1=Horn, etc.
+}
+
+export interface DeviceFullConfig {
+  // Identity
+  deviceName?: string
+  deviceId?: number
+  playerId?: number
+  teamId?: number
+  colorRgb?: number // 0xRRGGBB
+
+  // Hardware/AV
+  irPower?: number
+  volume?: number
+  soundProfile?: number
+  hapticEnabled?: boolean
+
+  // Game Rules - Health
+  enableHearts?: boolean
+  spawnHearts?: number
+  maxHearts?: number
+  respawnTimeS?: number
+  damageIn?: number
+  damageOut?: number
+  friendlyFire?: boolean
+
+  // Game Rules - Ammo
+  enableAmmo?: boolean
+  maxAmmo?: number
+  reloadTimeMs?: number
+
+  // Game Timer
+  gameDurationS?: number
+
+  // ESP-NOW Peers
+  espnowPeers?: string[]
 }
 
 export type ClientMessage =

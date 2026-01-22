@@ -117,7 +117,7 @@ export interface GameComm {
  * Configuration for LocalComm (WebSocket-based)
  */
 export interface LocalCommConfig {
-  /** WebSocket server URL (default: ws://localhost:8080) */
+  /** WebSocket server URL (deprecated - now connects directly to devices) */
   serverUrl?: string
   /** Auto-reconnect on disconnect */
   autoReconnect?: boolean
@@ -127,8 +127,10 @@ export interface LocalCommConfig {
   maxRetries?: number
   /** Connection timeout in ms */
   connectionTimeout?: number
-  /** Heartbeat interval in ms */
+  /** Heartbeat interval in ms (0 = use native WebSocket ping/pong) */
   heartbeatInterval?: number
+  /** Use MessagePack binary protocol instead of JSON */
+  useBinaryProtocol?: boolean
 }
 
 /**

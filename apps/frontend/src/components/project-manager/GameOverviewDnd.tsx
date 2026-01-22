@@ -48,6 +48,8 @@ import {
   Wifi,
   WifiOff,
   Zap,
+  Send,
+  Loader2,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -63,6 +65,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useDeviceConfig } from '@/hooks/useDeviceConfig'
 
 import { AddDeviceDialog, AddPlayerDialog, AddTeamDialog } from './AddDialogs'
 import type { Device, Player, Project, Team } from './types'
@@ -555,9 +558,23 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isSendingConfig, setIsSendingConfig] = useState(false)
 
   const { broadcastCommand, connectAll, disconnectAll, connectedDevices, connections } =
     useDeviceConnections()
+  const { sendToAllDevices, hasDevices } = useDeviceConfig(project)
+
+  // Handle send config to all devices
+  const handleSendConfigToAll = async () => {
+    setIsSendingConfig(true)
+    try {
+      const result = await sendToAllDevices()
+      console.log(`Config sent: ${result.sent} devices, ${result.failed} failed`)
+      // Could add toast notification here
+    } finally {
+      setIsSendingConfig(false)
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -861,7 +878,7 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
             </div>
 
             {/* Game Controls */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {!isGameRunning ? (
                 <Button
                   size="lg"
@@ -893,19 +910,20 @@ export function GameOverview({ project, availableDevices = [] }: GameOverviewPro
                 <span className="hidden sm:inline">Reset</span>
               </Button>
               <Button
-                variant="outline"
-                className="h-12 gap-2"
-                onClick={onlineCount > 0 ? disconnectAll : connectAll}
+                variant="secondary"
+                className="col-span-2 h-12 gap-2"
+                onClick={handleSendConfigToAll}
+                disabled={!hasDevices || isSendingConfig}
               >
-                {onlineCount > 0 ? (
+                {isSendingConfig ? (
                   <>
-                    <WifiOff className="w-4 h-4" />
-                    <span className="hidden sm:inline">Disconnect</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline">Sending...</span>
                   </>
                 ) : (
                   <>
-                    <Wifi className="w-4 h-4" />
-                    <span className="hidden sm:inline">Connect</span>
+                    <Send className="w-4 h-4" />
+                    <span className="hidden sm:inline">Send Config</span>
                   </>
                 )}
               </Button>
